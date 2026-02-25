@@ -190,18 +190,21 @@ async def admin_login(request: Request):
 
 
 @app.get("/admin/dashboard", response_class=HTMLResponse)
-async def admin_dashboard(request: Request):
+async def admin_dashboard(request: Request, days: int = 30):
     """Admin dashboard with analytics."""
+    # Clamp days to valid range
+    days = max(7, min(days, 365))
     ctx = get_base_context(request)
     ctx["fleet_stats"] = db.get_fleet_stats()
-    events = db.get_analytics(days=30)
-    ctx["analytics"] = analytics_service.aggregate_dashboard_data(events)
+    events = db.get_analytics(days=days)
+    ctx["analytics"] = analytics_service.aggregate_dashboard_data(events, days=days)
     ctx["most_viewed"] = db.get_most_viewed(limit=5)
     ctx["recent_leads"] = db.get_leads()[:10]
     # Build trucks_by_id for lead→vehicle resolution
     all_trucks = db.get_trucks()
     ctx["trucks_by_id"] = {t["id"]: t for t in all_trucks}
     ctx["all_trucks"] = all_trucks
+    ctx["selected_days"] = days
     return templates.TemplateResponse("admin/dashboard.html", ctx)
 
 
@@ -223,6 +226,14 @@ async def admin_leads(request: Request):
     all_trucks = db.get_trucks()
     ctx["trucks_by_id"] = {t["id"]: t for t in all_trucks}
     return templates.TemplateResponse("admin/leads.html", ctx)
+
+
+@app.get("/admin/testimonials", response_class=HTMLResponse)
+async def admin_testimonials(request: Request):
+    """Admin testimonials gallery management."""
+    ctx = get_base_context(request)
+    ctx["testimonials"] = db.get_testimonials()
+    return templates.TemplateResponse("admin/testimonials.html", ctx)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -462,6 +473,31 @@ async def api_analytics_dashboard():
 async def api_fleet_stats():
     """API: Get fleet status counters."""
     return db.get_fleet_stats()
+
+
+@app.post("/api/testimonials")
+async def api_create_testimonial(
+    image: UploadFile = File(...),
+):
+    """API: Upload a new testimonial image."""
+    if image.filename:
+        try:
+            result = await image_processor.process_upload(image)
+            url = result.get("large", result.get("original", ""))
+            testimonial = db.create_testimonial({"image_url": url})
+            return {"success": True, "testimonial": testimonial}
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    raise HTTPException(status_code=400, detail="No image provided")
+
+
+@app.delete("/api/testimonials/{testimonial_id}")
+async def api_delete_testimonial(testimonial_id: str):
+    """API: Delete a testimonial."""
+    success = db.delete_testimonial(testimonial_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Testimonial not found")
+    return {"success": True}
 
 
 # ═══════════════════════════════════════════════════════════════

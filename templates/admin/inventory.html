@@ -121,6 +121,7 @@
             <a href="/admin/dashboard" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
             <a href="/admin/inventory" class="nav-item active"><i class="bi bi-truck"></i> Inventory</a>
             <a href="/admin/leads" class="nav-item"><i class="bi bi-person-lines-fill"></i> Leads</a>
+            <a href="/admin/testimonials" class="nav-item"><i class="bi bi-images"></i> Testimonials</a>
             <div class="nav-divider"></div>
             <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
             <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
@@ -211,7 +212,7 @@
                                                 class="btn btn-sm btn-outline-primary" style="border-radius:6px;"
                                                 title="View"><i class="bi bi-eye"></i></a>
                                             <button class="btn btn-sm btn-outline-danger" style="border-radius:6px;"
-                                                onclick="deleteTruck('{{ truck.id }}')" title="Delete"><i
+                                                onclick='confirmDelete({{ truck | tojson }})' title="Delete"><i
                                                     class="bi bi-trash"></i></button>
                                         </div>
                                     </td>
@@ -654,21 +655,69 @@
             this.innerHTML = '<i class="bi bi-check-lg"></i> Save Changes';
         });
 
-        // ── DELETE VEHICLE ──
-        function deleteTruck(id) {
-            if (!confirm('Delete this vehicle? This cannot be undone.')) return;
-            fetch('/api/trucks/' + id, { method: 'DELETE' })
+        // ── DELETE VEHICLE (with detailed confirmation) ──
+        var pendingDeleteId = null;
+
+        function confirmDelete(truck) {
+            pendingDeleteId = truck.id;
+            var img = (truck.images && truck.images.length) ? truck.images[0] : '/assets/img/trucks/placeholder.jpg';
+            var html = '<div style="text-align:center;padding:10px;">' +
+                '<img src="' + img + '" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:16px;" onerror="this.src=\'/assets/img/trucks/placeholder.jpg\'">' +
+                '<h5 style="font-weight:700;margin-bottom:8px;">' + (truck.title || 'Unknown') + '</h5>' +
+                '<p style="margin:0 0 4px;color:#666;"><strong>Price:</strong> $' + Number(truck.price || 0).toLocaleString() + '</p>' +
+                '<p style="margin:0 0 4px;color:#666;"><strong>Category:</strong> ' + ((truck.category || 'N/A').charAt(0).toUpperCase() + (truck.category || '').slice(1)) + '</p>' +
+                '<p style="margin:0 0 4px;color:#666;"><strong>Condition:</strong> ' + ((truck.condition || 'N/A').charAt(0).toUpperCase() + (truck.condition || '').slice(1)) + '</p>' +
+                '<p style="margin:0 0 4px;color:#666;"><strong>Views:</strong> ' + (truck.views || 0) + '</p>' +
+                '<hr style="margin:16px 0;">' +
+                '<p style="color:#dc3545;font-weight:600;margin:0;"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone!</p>' +
+                '</div>';
+            document.getElementById('deleteConfirmBody').innerHTML = html;
+            var modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+            if (!pendingDeleteId) return;
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
+            fetch('/api/trucks/' + pendingDeleteId, { method: 'DELETE' })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     if (data.success) {
-                        showToast('Vehicle deleted', 'success');
+                        showToast('Vehicle deleted successfully!', 'success');
+                        bootstrap.Modal.getInstance(document.getElementById('deleteConfirmModal')).hide();
                         setTimeout(function () { window.location.reload(); }, 800);
                     } else {
                         showToast('Error deleting vehicle', 'error');
                     }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-trash3"></i> Yes, Delete';
                 });
-        }
+        });
     </script>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+            <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+                <div class="modal-header" style="background:#fff0f0;border-bottom:1px solid #ffe0e0;">
+                    <h6 class="modal-title" style="font-weight:700;color:#dc3545;"><i
+                            class="bi bi-exclamation-triangle"></i> Delete Vehicle</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="deleteConfirmBody"></div>
+                <div class="modal-footer" style="border-top:1px solid #eee;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="border-radius:8px;">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn"
+                        style="border-radius:8px;font-weight:600;">
+                        <i class="bi bi-trash3"></i> Yes, Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

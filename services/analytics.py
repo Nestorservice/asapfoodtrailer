@@ -10,14 +10,14 @@ from datetime import datetime, timedelta, timezone
 class AnalyticsService:
     """Processes and aggregates analytics data for the admin dashboard."""
 
-    def aggregate_dashboard_data(self, events: list) -> dict:
+    def aggregate_dashboard_data(self, events: list, days: int = 30) -> dict:
         """Aggregate analytics events into dashboard-ready data."""
         now = datetime.now(timezone.utc)
         today = now.date()
 
-        # Daily views (last 7 days)
+        # Daily views (last N days)
         daily_views = {}
-        for i in range(7):
+        for i in range(min(days, 30)):  # Cap daily labels at 30 for readability
             day = today - timedelta(days=i)
             daily_views[day.isoformat()] = 0
 

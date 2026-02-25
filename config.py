@@ -32,11 +32,11 @@ class Settings:
 
     # Business Info
     BUSINESS_NAME = os.getenv("BUSINESS_NAME", "ASAP Food Trailer")
-    BUSINESS_PHONE = os.getenv("BUSINESS_PHONE", "(786) 505-1365")
+    BUSINESS_PHONE = os.getenv("BUSINESS_PHONE", "+12016453364")
     BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL", "info@asapfoodtrailer.com")
     BUSINESS_ADDRESS = os.getenv("BUSINESS_ADDRESS", "Houston, TX")
     BUSINESS_CITY = os.getenv("BUSINESS_CITY", "Houston")
-    BUSINESS_WHATSAPP = os.getenv("BUSINESS_WHATSAPP", "17865051365")
+    BUSINESS_WHATSAPP = os.getenv("BUSINESS_WHATSAPP", "12104607427")
 
     # Paths
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))

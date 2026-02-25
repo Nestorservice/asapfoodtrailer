@@ -40,7 +40,9 @@ class DatabaseService:
                     cred = credentials.Certificate(
                         settings.FIREBASE_SERVICE_ACCOUNT_PATH
                     )
-                firebase_admin.initialize_app(cred)
+                firebase_admin.initialize_app(
+                    cred, {"storageBucket": settings.FIREBASE_STORAGE_BUCKET}
+                )
             self.db = firestore.client()
         except Exception as e:
             print(f"Firebase init failed, falling back to local mode: {e}")
@@ -319,6 +321,37 @@ class DatabaseService:
         else:
             docs = self.db.collection("testimonials").stream()
             return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+
+    def create_testimonial(self, testimonial_data: dict) -> dict:
+        """Create a new testimonial (image card)."""
+        testimonial_data["id"] = str(uuid.uuid4())
+        testimonial_data["created_at"] = datetime.now(timezone.utc).isoformat()
+
+        if self.mode == "local":
+            data = self._load_local_data()
+            data.setdefault("testimonials", []).append(testimonial_data)
+            self._save_local_data()
+        else:
+            self.db.collection("testimonials").document(testimonial_data["id"]).set(
+                testimonial_data
+            )
+        return testimonial_data
+
+    def delete_testimonial(self, testimonial_id: str) -> bool:
+        """Delete a testimonial."""
+        if self.mode == "local":
+            data = self._load_local_data()
+            original_len = len(data.get("testimonials", []))
+            data["testimonials"] = [
+                t for t in data.get("testimonials", []) if t.get("id") != testimonial_id
+            ]
+            if len(data["testimonials"]) < original_len:
+                self._save_local_data()
+                return True
+            return False
+        else:
+            self.db.collection("testimonials").document(testimonial_id).delete()
+            return True
 
     # ─── Most Viewed Trucks ──────────────────────────────────
 

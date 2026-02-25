@@ -120,6 +120,7 @@
             <a href="/admin/dashboard" class="nav-item active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
             <a href="/admin/inventory" class="nav-item"><i class="bi bi-truck"></i> Inventory</a>
             <a href="/admin/leads" class="nav-item"><i class="bi bi-person-lines-fill"></i> Leads</a>
+            <a href="/admin/testimonials" class="nav-item"><i class="bi bi-images"></i> Testimonials</a>
             <div class="nav-divider"></div>
             <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
             <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
@@ -203,8 +204,17 @@
                 <!-- Traffic Overview -->
                 <div class="col-lg-8">
                     <div class="admin-card">
-                        <div class="admin-card-header">
-                            <h6><i class="bi bi-graph-up"></i> Traffic Overview</h6>
+                        <div
+                            class="admin-card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h6 class="mb-0"><i class="bi bi-graph-up"></i> Traffic Overview</h6>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm date-range-btn" data-days="7" onclick="setDateRange(7)">7
+                                    days</button>
+                                <button class="btn btn-sm date-range-btn" data-days="30" onclick="setDateRange(30)">30
+                                    days</button>
+                                <button class="btn btn-sm date-range-btn" data-days="90" onclick="setDateRange(90)">90
+                                    days</button>
+                            </div>
                         </div>
                         <div class="admin-card-body">
                             <div class="chart-container" style="height:280px;">
@@ -470,67 +480,126 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .date-range-btn {
+            padding: 3px 12px;
+            border-radius: 6px;
+            font-size: .75rem;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            background: #fff;
+            color: #666;
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .date-range-btn:hover,
+        .date-range-btn.active {
+            background: #ff6b00;
+            color: #fff;
+            border-color: #ff6b00;
+        }
+
+        .no-data-msg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #bbb;
+            font-size: .9rem;
+        }
+    </style>
     <script>
         function toggleSidebar() {
             document.getElementById('adminSidebar').classList.toggle('open');
             document.getElementById('sidebarOverlay').classList.toggle('show');
         }
 
+        // ── Date Range Picker ──
+        var currentDays = parseInt(new URLSearchParams(window.location.search).get('days') || '30');
+
+        // Highlight current button
+        document.querySelectorAll('.date-range-btn').forEach(function (btn) {
+            if (parseInt(btn.dataset.days) === currentDays) btn.classList.add('active');
+        });
+
+        function setDateRange(days) {
+            window.location.href = '/admin/dashboard?days=' + days;
+        }
+
         // Chart defaults
         Chart.defaults.font.family = "'Inter', sans-serif";
         Chart.defaults.font.size = 12;
 
-        // ── Traffic Chart ──
+        // ── Traffic Chart (uses analytics.daily_views = {labels: [], data: []}) ──
         var trafficCtx = document.getElementById('trafficChart');
         if (trafficCtx) {
-            var rawDaily = {{ analytics.daily_views | default ([]) | tojson
+            var trafficRaw = {{ analytics.daily_views | tojson
         }};
-        var dailyData = Array.isArray(rawDaily) ? rawDaily : [];
-        var labels = dailyData.map(function (d) { return d.date; });
-        var views = dailyData.map(function (d) { return d.views; });
-        new Chart(trafficCtx, {
-            type: 'line',
-            data: {
-                labels: labels.length ? labels : [],
-                datasets: [{
-                    label: 'Page Views',
-                    data: views.length ? views : [],
-                    borderColor: '#ff6b00',
-                    backgroundColor: 'rgba(255,107,0,0.08)',
-                    tension: 0.4, fill: true, pointRadius: 4, borderWidth: 2.5,
-                    pointBackgroundColor: '#ff6b00'
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-                    x: { grid: { display: false } }
-                }
-            }
+        var tLabels = (trafficRaw && trafficRaw.labels) ? trafficRaw.labels : [];
+        var tData = (trafficRaw && trafficRaw.data) ? trafficRaw.data : [];
+
+        // Format date labels nicely
+        tLabels = tLabels.map(function (d) {
+            var parts = d.split('-');
+            return parts.length >= 3 ? parts[1] + '/' + parts[2] : d;
         });
+
+        if (tData.reduce(function (a, b) { return a + b; }, 0) === 0) {
+            trafficCtx.parentNode.innerHTML = '<div class="no-data-msg"><i class="bi bi-bar-chart" style="margin-right:8px;"></i> No traffic data yet — views will appear here as visitors browse your site.</div>';
+        } else {
+            new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: tLabels,
+                    datasets: [{
+                        label: 'Page Views',
+                        data: tData,
+                        borderColor: '#ff6b00',
+                        backgroundColor: 'rgba(255,107,0,0.08)',
+                        tension: 0.4, fill: true, pointRadius: 4, borderWidth: 2.5,
+                        pointBackgroundColor: '#ff6b00'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
         }
 
-        // ── Device Chart ──
+        // ── Device Chart (uses analytics.devices = {labels: [], data: []}) ──
         var deviceCtx = document.getElementById('deviceChart');
         if (deviceCtx) {
-            var deviceData = {{ analytics.device_breakdown | default ({}) | tojson
+            var devRaw = {{ analytics.devices | tojson
         }};
-        var dLabels = Object.keys(deviceData).length ? Object.keys(deviceData) : [];
-        var dValues = Object.values(deviceData).length ? Object.values(deviceData) : [];
-        new Chart(deviceCtx, {
-            type: 'doughnut',
-            data: {
-                labels: dLabels,
-                datasets: [{ data: dValues, backgroundColor: ['#ff6b00', '#1a1a2e', '#198754', '#0d6efd'], borderWidth: 0 }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle' } } },
-                cutout: '68%'
-            }
-        });
+        var dLabels = (devRaw && devRaw.labels) ? devRaw.labels : [];
+        var dValues = (devRaw && devRaw.data) ? devRaw.data : [];
+
+        // Capitalize labels
+        dLabels = dLabels.map(function (l) { return l.charAt(0).toUpperCase() + l.slice(1); });
+
+        if (dValues.length === 0 || dValues.reduce(function (a, b) { return a + b; }, 0) === 0) {
+            deviceCtx.parentNode.innerHTML = '<div class="no-data-msg"><i class="bi bi-phone" style="margin-right:8px;"></i> No device data yet</div>';
+        } else {
+            new Chart(deviceCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: dLabels,
+                    datasets: [{ data: dValues, backgroundColor: ['#ff6b00', '#1a1a2e', '#198754', '#0d6efd'], borderWidth: 0 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle' } } },
+                    cutout: '68%'
+                }
+            });
+        }
         }
 
         // ── Leads Funnel ──
@@ -579,31 +648,38 @@
         });
         }
 
-        // ── Traffic Sources ──
+        // ── Traffic Sources (uses analytics.sources = {labels: [], data: []}) ──
         var sourcesCtx = document.getElementById('sourcesChart');
         if (sourcesCtx) {
-            var sourceData = {{ analytics.sources | default ({}) | tojson
+            var srcRaw = {{ analytics.sources | tojson
         }};
-        var sLabels = Object.keys(sourceData).length ? Object.keys(sourceData) : [];
-        var sValues = Object.values(sourceData).length ? Object.values(sourceData) : [];
-        new Chart(sourcesCtx, {
-            type: 'bar',
-            data: {
-                labels: sLabels.map(function (s) { return s.charAt(0).toUpperCase() + s.slice(1); }),
-                datasets: [{
-                    label: 'Visits',
-                    data: sValues,
-                    backgroundColor: ['#ff6b00', '#0d6efd', '#e91e63', '#198754'],
-                    borderRadius: 8, borderSkipped: false
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: { x: { beginAtZero: true, grid: { color: '#f0f0f0' } }, y: { grid: { display: false } } }
-            }
-        });
+        var sLabels = (srcRaw && srcRaw.labels) ? srcRaw.labels : [];
+        var sValues = (srcRaw && srcRaw.data) ? srcRaw.data : [];
+
+        sLabels = sLabels.map(function (s) { return s.charAt(0).toUpperCase() + s.slice(1); });
+
+        if (sValues.length === 0 || sValues.reduce(function (a, b) { return a + b; }, 0) === 0) {
+            sourcesCtx.parentNode.innerHTML = '<div class="no-data-msg"><i class="bi bi-megaphone" style="margin-right:8px;"></i> No source data yet</div>';
+        } else {
+            new Chart(sourcesCtx, {
+                type: 'bar',
+                data: {
+                    labels: sLabels,
+                    datasets: [{
+                        label: 'Visits',
+                        data: sValues,
+                        backgroundColor: ['#ff6b00', '#0d6efd', '#e91e63', '#198754'],
+                        borderRadius: 8, borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: { x: { beginAtZero: true, grid: { color: '#f0f0f0' } }, y: { grid: { display: false } } }
+                }
+            });
+        }
         }
 
         // ── Condition Breakdown ──

@@ -428,9 +428,12 @@
     </div>
 </div>
 
-<!-- ═══ TESTIMONIALS ═══ -->
-{% if testimonials and testimonials|length > 0 %}
-<div class="sp" style="background:#fff;">
+<!-- ═══ TESTIMONIALS GALLERY ═══ -->
+{% set image_testimonials = testimonials | selectattr('image_url', 'defined') | list if testimonials else [] %}
+{% set text_testimonials = testimonials | rejectattr('image_url', 'defined') | list if testimonials else [] %}
+
+{% if image_testimonials|length > 0 or text_testimonials|length > 0 %}
+<div class="sp" style="background:#fff;" id="testimonials-section">
     <div class="container">
         <div class="row">
             <div class="col-lg-6 m-auto text-center">
@@ -440,8 +443,28 @@
                 </div>
             </div>
         </div>
+
+        {% if image_testimonials|length > 0 %}
+        <!-- Image Gallery -->
+        <div class="row mt-40 g-3 justify-content-center">
+            {% for t in image_testimonials %}
+            <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up" data-aos-duration="{{ 600 + loop.index0 * 150 }}">
+                <div class="testimonial-img-card" onclick="openTestimonialLightbox('{{ t.image_url }}')">
+                    <img src="{{ t.image_url }}" alt="Client Testimonial" loading="lazy"
+                        onerror="this.parentElement.style.display='none'">
+                    <div class="testimonial-img-overlay">
+                        <i class="bi bi-zoom-in"></i>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if text_testimonials|length > 0 %}
+        <!-- Text Testimonials -->
         <div class="row mt-40">
-            {% for t in testimonials[:3] %}
+            {% for t in text_testimonials[:3] %}
             <div class="col-lg-4 col-md-6">
                 <div class="asap-testimonial-card mt-30" data-aos="fade-up"
                     data-aos-duration="{{ 800 + loop.index0 * 200 }}">
@@ -464,8 +487,113 @@
             </div>
             {% endfor %}
         </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- Testimonial Image Styles -->
+<style>
+    .testimonial-img-card {
+        position: relative;
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        transition: transform .3s, box-shadow .3s;
+    }
+
+    .testimonial-img-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.14);
+    }
+
+    .testimonial-img-card img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+        transition: transform .4s;
+    }
+
+    .testimonial-img-card:hover img {
+        transform: scale(1.05);
+    }
+
+    .testimonial-img-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity .3s;
+    }
+
+    .testimonial-img-overlay i {
+        font-size: 2rem;
+        color: #fff;
+    }
+
+    .testimonial-img-card:hover .testimonial-img-overlay {
+        opacity: 1;
+    }
+
+    /* Lightbox */
+    .testimonial-lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(0, 0, 0, 0.9);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .testimonial-lightbox.active {
+        display: flex;
+    }
+
+    .testimonial-lightbox img {
+        max-width: 90vw;
+        max-height: 90vh;
+        border-radius: 12px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .testimonial-lightbox .close-btn {
+        position: absolute;
+        top: 20px;
+        right: 30px;
+        font-size: 2rem;
+        color: #fff;
+        cursor: pointer;
+        background: none;
+        border: none;
+    }
+</style>
+
+<!-- Lightbox -->
+<div class="testimonial-lightbox" id="testimonialLightbox" onclick="closeLightbox()">
+    <button class="close-btn"><i class="bi bi-x-lg"></i></button>
+    <img id="lightboxImg" src="" alt="Testimonial">
+</div>
+
+<script>
+    function openTestimonialLightbox(src) {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('testimonialLightbox').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+        document.getElementById('testimonialLightbox').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeLightbox();
+    });
+</script>
 {% endif %}
 
 {% endblock %}
