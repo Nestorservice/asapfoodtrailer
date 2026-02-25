@@ -246,7 +246,8 @@
                             <i class="bi bi-calendar3"></i>
                             {{ t.created_at[:10] if t.created_at else 'Unknown' }}
                         </span>
-                        <button class="btn-delete" onclick="deleteTestimonial('{{ t.id }}')">
+                        <button class="btn-delete"
+                            onclick="confirmDeleteTestimonial('{{ t.id }}', '{{ t.image_url }}')">
                             <i class="bi bi-trash3"></i> Delete
                         </button>
                     </div>
@@ -272,6 +273,22 @@
         function toggleSidebar() {
             document.getElementById('adminSidebar').classList.toggle('open');
             document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // ── Toast Notification ──
+        function showToast(message, type) {
+            var existing = document.querySelector('.custom-toast');
+            if (existing) existing.remove();
+
+            var colors = { success: '#28a745', error: '#dc3545', warning: '#ff6b00' };
+            var icons = { success: 'bi-check-circle', error: 'bi-x-circle', warning: 'bi-exclamation-triangle' };
+
+            var toast = document.createElement('div');
+            toast.className = 'custom-toast';
+            toast.style.cssText = 'position:fixed;top:24px;right:24px;z-index:10000;padding:14px 24px;border-radius:12px;color:#fff;font-weight:600;font-size:.9rem;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,0.2);animation:slideIn .3s;background:' + (colors[type] || colors.error);
+            toast.innerHTML = '<i class="bi ' + (icons[type] || icons.error) + '"></i> ' + message;
+            document.body.appendChild(toast);
+            setTimeout(function () { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(function () { toast.remove(); }, 300); }, 3000);
         }
 
         // ── File Upload ──
@@ -305,37 +322,45 @@
                         method: 'POST',
                         body: formData
                     });
-                    var data = await resp.json();
-                    if (data.success) {
-                        addCardToGrid(data.testimonial);
-                        completed++;
+                    if (resp.ok) {
+                        var data = await resp.json();
+                        if (data.success) {
+                            addCardToGrid(data.testimonial);
+                            completed++;
+                        } else {
+                            showToast('Failed to upload: ' + (data.detail || 'Unknown error'), 'error');
+                        }
                     } else {
-                        alert('Failed to upload: ' + (data.detail || 'Unknown error'));
+                        var errData = {};
+                        try { errData = await resp.json(); } catch (e) { }
+                        showToast('Upload failed: ' + (errData.detail || resp.statusText), 'error');
                     }
                 } catch (err) {
-                    alert('Upload error: ' + err.message);
+                    showToast('Upload error: ' + err.message, 'error');
                 }
             }
 
             progressBar.style.width = '100%';
-            progressText.textContent = 'Done! ' + completed + ' photo(s) uploaded.';
+            if (completed > 0) {
+                progressText.textContent = 'Done! ' + completed + ' photo(s) uploaded.';
+                showToast(completed + ' photo(s) uploaded successfully!', 'success');
+            } else {
+                progressText.textContent = 'Upload failed.';
+            }
             setTimeout(function () {
                 progressEl.style.display = 'none';
                 progressBar.style.width = '0%';
             }, 2000);
 
-            // Remove empty state if it exists
             var emptyState = document.getElementById('emptyState');
-            if (emptyState) emptyState.remove();
+            if (emptyState && completed > 0) emptyState.remove();
 
-            // Update count
             updateCount();
         }
 
         function addCardToGrid(t) {
             var grid = document.getElementById('galleryGrid');
             if (!grid) {
-                // Create grid if first item
                 grid = document.createElement('div');
                 grid.className = 'gallery-grid';
                 grid.id = 'galleryGrid';
@@ -349,19 +374,39 @@
                 '<div class="card-actions">' +
                 '<span class="card-date"><i class="bi bi-calendar3"></i> ' +
                 (t.created_at ? t.created_at.substring(0, 10) : 'Today') + '</span>' +
-                '<button class="btn-delete" onclick="deleteTestimonial(\'' + t.id + '\')">' +
+                '<button class="btn-delete" onclick="confirmDeleteTestimonial(\'' + t.id + '\', \'' + t.image_url + '\')">' +
                 '<i class="bi bi-trash3"></i> Delete</button></div>';
             grid.prepend(card);
         }
 
-        async function deleteTestimonial(id) {
-            if (!confirm('Are you sure you want to delete this testimonial photo?')) return;
+        // ── Styled Delete Confirmation ──
+        var pendingDeleteTestimonialId = null;
+
+        function confirmDeleteTestimonial(id, imageUrl) {
+            pendingDeleteTestimonialId = id;
+            var body = document.getElementById('deleteTestimonialBody');
+            body.innerHTML = '<div style="text-align:center;padding:10px;">' +
+                '<img src="' + imageUrl + '" style="width:100%;max-height:200px;object-fit:cover;border-radius:12px;margin-bottom:16px;" onerror="this.src=\'/assets/img/trucks/placeholder.jpg\'">' +
+                '<p style="color:#666;margin:0 0 12px;">Are you sure you want to delete this testimonial photo?</p>' +
+                '<p style="color:#dc3545;font-weight:600;margin:0;"><i class="bi bi-exclamation-triangle"></i> This action cannot be undone!</p>' +
+                '</div>';
+            var modal = new bootstrap.Modal(document.getElementById('deleteTestimonialModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmDeleteTestimonialBtn').addEventListener('click', async function () {
+            if (!pendingDeleteTestimonialId) return;
+            var btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Deleting...';
 
             try {
-                var resp = await fetch('/api/testimonials/' + id, { method: 'DELETE' });
+                var resp = await fetch('/api/testimonials/' + pendingDeleteTestimonialId, { method: 'DELETE' });
                 var data = await resp.json();
                 if (data.success) {
-                    var card = document.getElementById('card-' + id);
+                    showToast('Testimonial deleted!', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('deleteTestimonialModal')).hide();
+                    var card = document.getElementById('card-' + pendingDeleteTestimonialId);
                     if (card) {
                         card.style.transition = 'all .3s';
                         card.style.transform = 'scale(0.8)';
@@ -369,12 +414,14 @@
                         setTimeout(function () { card.remove(); updateCount(); }, 300);
                     }
                 } else {
-                    alert('Failed to delete: ' + (data.detail || 'Unknown error'));
+                    showToast('Delete failed: ' + (data.detail || 'Unknown error'), 'error');
                 }
             } catch (err) {
-                alert('Delete error: ' + err.message);
+                showToast('Delete error: ' + err.message, 'error');
             }
-        }
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-trash3"></i> Yes, Delete';
+        });
 
         function updateCount() {
             var cards = document.querySelectorAll('.gallery-card');
@@ -382,6 +429,48 @@
             if (pill) pill.innerHTML = '<i class="bi bi-image"></i> ' + cards.length + ' photos';
         }
     </script>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteTestimonialModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">
+            <div class="modal-content" style="border-radius:16px;overflow:hidden;border:none;">
+                <div class="modal-header" style="background:#fff0f0;border-bottom:1px solid #ffe0e0;">
+                    <h6 class="modal-title" style="font-weight:700;color:#dc3545;"><i
+                            class="bi bi-exclamation-triangle"></i> Delete Testimonial</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="deleteTestimonialBody"></div>
+                <div class="modal-footer" style="border-top:1px solid #eee;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        style="border-radius:8px;">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteTestimonialBtn"
+                        style="border-radius:8px;font-weight:600;">
+                        <i class="bi bi-trash3"></i> Yes, Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideIn {
+            from {
+                transform: translateX(100px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .custom-toast {
+            transition: all .3s;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

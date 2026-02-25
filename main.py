@@ -333,6 +333,11 @@ async def api_create_truck(
                 image_urls.append(result.get("large", result.get("original", "")))
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e))
+            except Exception as e:
+                print(f"Image upload error: {e}")
+                raise HTTPException(
+                    status_code=500, detail=f"Image processing failed: {str(e)}"
+                )
 
     # Parse equipment list
     equipment_list = (
@@ -409,6 +414,11 @@ async def api_add_truck_images(
                     new_urls.append(url)
             except ValueError as e:
                 raise HTTPException(status_code=400, detail=str(e))
+            except Exception as e:
+                print(f"Image upload error: {e}")
+                raise HTTPException(
+                    status_code=500, detail=f"Image processing failed: {str(e)}"
+                )
 
     all_images = existing_images + new_urls
     db.update_truck(truck_id, {"images": all_images})
@@ -488,6 +498,9 @@ async def api_create_testimonial(
             return {"success": True, "testimonial": testimonial}
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            print(f"Testimonial upload error: {e}")
+            raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
     raise HTTPException(status_code=400, detail="No image provided")
 
 
