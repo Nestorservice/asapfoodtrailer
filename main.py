@@ -238,7 +238,7 @@ async def api_auth_login(request: Request):
     password = body.get("password", "")
 
     # Admin credentials check (works in both local and firebase modes)
-    admin_password = os.getenv("ADMIN_PASSWORD", "Admin2026!")
+    admin_password = os.getenv("ADMIN_PASSWORD", "12345")
     admin_emails = [e.lower() for e in settings.ADMIN_EMAILS]
 
     if email in admin_emails and password == admin_password:
@@ -373,6 +373,58 @@ async def api_delete_truck(truck_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Truck not found")
     return {"success": True}
+
+
+@app.post("/api/trucks/{truck_id}/images")
+async def api_add_truck_images(
+    truck_id: str,
+    images: List[UploadFile] = File(...),
+):
+    """API: Upload new images to an existing vehicle."""
+    # Get existing truck
+    truck = db.get_truck(truck_id)
+    if not truck:
+        raise HTTPException(status_code=404, detail="Truck not found")
+
+    existing_images = truck.get("images", [])
+    new_urls = []
+
+    for img_file in images:
+        if img_file.filename:
+            try:
+                result = await image_processor.process_upload(img_file)
+                url = result.get("large", result.get("original", ""))
+                if url:
+                    new_urls.append(url)
+            except ValueError as e:
+                raise HTTPException(status_code=400, detail=str(e))
+
+    all_images = existing_images + new_urls
+    db.update_truck(truck_id, {"images": all_images})
+
+    return {"success": True, "images": all_images, "added": len(new_urls)}
+
+
+@app.delete("/api/trucks/{truck_id}/images")
+async def api_remove_truck_image(truck_id: str, request: Request):
+    """API: Remove a specific image from a vehicle."""
+    body = await request.json()
+    image_url = body.get("image_url", "")
+
+    if not image_url:
+        raise HTTPException(status_code=400, detail="image_url is required")
+
+    truck = db.get_truck(truck_id)
+    if not truck:
+        raise HTTPException(status_code=404, detail="Truck not found")
+
+    existing_images = truck.get("images", [])
+    if image_url in existing_images:
+        existing_images.remove(image_url)
+        db.update_truck(truck_id, {"images": existing_images})
+        return {"success": True, "images": existing_images}
+    else:
+        return {"success": False, "detail": "Image not found in vehicle"}
 
 
 @app.post("/api/leads")

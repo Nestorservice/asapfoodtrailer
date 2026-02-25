@@ -113,7 +113,7 @@
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-header">
-            <img src="/assets/img/logo/white-logo.png" alt="ASAP" class="sidebar-logo">
+            <img src="/assets/img/logo/logo.jpg" alt="ASAP" class="sidebar-logo" style="height:32px;border-radius:6px;">
             <button class="sidebar-close d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
@@ -464,6 +464,9 @@
                 </div>
             </div>
         </div>
+        <footer class="admin-footer">
+            <p>&copy; 2026 ASAP Food Trailers &mdash; Admin Panel v2.0 &bull; <a href="/">View Website</a></p>
+        </footer>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -480,32 +483,33 @@
         // ── Traffic Chart ──
         var trafficCtx = document.getElementById('trafficChart');
         if (trafficCtx) {
-            var rawDaily = {{ analytics.daily_views | default([]) | tojson }};
-            var dailyData = Array.isArray(rawDaily) ? rawDaily : [];
-            var labels = dailyData.map(function (d) { return d.date; });
-            var views = dailyData.map(function (d) { return d.views; });
-            new Chart(trafficCtx, {
-                type: 'line',
-                data: {
-                    labels: labels.length ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Page Views',
-                        data: views.length ? views : [12, 19, 8, 15, 22, 30, 18],
-                        borderColor: '#ff6b00',
-                        backgroundColor: 'rgba(255,107,0,0.08)',
-                        tension: 0.4, fill: true, pointRadius: 4, borderWidth: 2.5,
-                        pointBackgroundColor: '#ff6b00'
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
-                        x: { grid: { display: false } }
-                    }
+            var rawDaily = {{ analytics.daily_views | default ([]) | tojson
+        }};
+        var dailyData = Array.isArray(rawDaily) ? rawDaily : [];
+        var labels = dailyData.map(function (d) { return d.date; });
+        var views = dailyData.map(function (d) { return d.views; });
+        new Chart(trafficCtx, {
+            type: 'line',
+            data: {
+                labels: labels.length ? labels : [],
+                datasets: [{
+                    label: 'Page Views',
+                    data: views.length ? views : [],
+                    borderColor: '#ff6b00',
+                    backgroundColor: 'rgba(255,107,0,0.08)',
+                    tension: 0.4, fill: true, pointRadius: 4, borderWidth: 2.5,
+                    pointBackgroundColor: '#ff6b00'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                    x: { grid: { display: false } }
                 }
-            });
+            }
+        });
         }
 
         // ── Device Chart ──
@@ -513,8 +517,8 @@
         if (deviceCtx) {
             var deviceData = {{ analytics.device_breakdown | default ({}) | tojson
         }};
-        var dLabels = Object.keys(deviceData).length ? Object.keys(deviceData) : ['Desktop', 'Mobile', 'Tablet'];
-        var dValues = Object.values(deviceData).length ? Object.values(deviceData) : [45, 40, 15];
+        var dLabels = Object.keys(deviceData).length ? Object.keys(deviceData) : [];
+        var dValues = Object.values(deviceData).length ? Object.values(deviceData) : [];
         new Chart(deviceCtx, {
             type: 'doughnut',
             data: {
@@ -580,8 +584,8 @@
         if (sourcesCtx) {
             var sourceData = {{ analytics.sources | default ({}) | tojson
         }};
-        var sLabels = Object.keys(sourceData).length ? Object.keys(sourceData) : ['Direct', 'Google', 'Social', 'Referral'];
-        var sValues = Object.values(sourceData).length ? Object.values(sourceData) : [40, 30, 20, 10];
+        var sLabels = Object.keys(sourceData).length ? Object.keys(sourceData) : [];
+        var sValues = Object.values(sourceData).length ? Object.values(sourceData) : [];
         new Chart(sourcesCtx, {
             type: 'bar',
             data: {

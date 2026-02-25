@@ -336,9 +336,143 @@ body {
     }
 }
 
+/* ─── ADMIN FOOTER ─── */
+.admin-footer {
+    background: var(--admin-card-bg);
+    border-top: 1px solid #eee;
+    padding: 20px 30px;
+    text-align: center;
+    margin-top: auto;
+}
+
+.admin-footer p {
+    margin: 0;
+    font-size: .78rem;
+    color: #999;
+}
+
+.admin-footer a {
+    color: var(--admin-orange);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.admin-footer a:hover {
+    text-decoration: underline;
+}
+
+/* ─── IMAGE GALLERY (edit modal) ─── */
+.img-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.img-gallery-item {
+    position: relative;
+    width: 110px;
+    height: 85px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid #eee;
+    transition: all .3s;
+}
+
+.img-gallery-item:hover {
+    border-color: var(--admin-orange);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .1);
+}
+
+.img-gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.img-gallery-item .img-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    font-size: .68rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity .2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+}
+
+.img-gallery-item:hover .img-remove {
+    opacity: 1;
+}
+
+.img-upload-zone {
+    border: 2px dashed #ddd;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .3s;
+    background: #fafafa;
+}
+
+.img-upload-zone:hover {
+    border-color: var(--admin-orange);
+    background: #fff5ee;
+}
+
+.img-upload-zone i {
+    font-size: 2rem;
+    color: #ccc;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.img-upload-zone span {
+    color: #999;
+    font-size: .85rem;
+}
+
 /* ═══════════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════════ */
+
+/* Prevent horizontal overflow */
+.admin-main {
+    overflow-x: hidden;
+    max-width: 100%;
+}
+
+.admin-content {
+    overflow-x: hidden;
+}
+
+/* Force scrollbar on tables */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.admin-table thead th {
+    white-space: nowrap;
+}
+
+.admin-table tbody td {
+    white-space: nowrap;
+}
+
+.admin-table tbody td:first-child {
+    white-space: normal;
+    min-width: 180px;
+}
 
 @media (max-width: 991px) {
     .admin-sidebar {
@@ -360,52 +494,99 @@ body {
     .admin-content {
         padding: 20px;
     }
+
+    .admin-footer {
+        padding: 16px 20px;
+    }
 }
 
 @media (max-width: 767px) {
     .admin-content {
-        padding: 16px;
+        padding: 16px 12px;
     }
 
     .stat-card {
-        padding: 18px;
-        gap: 14px;
+        padding: 16px;
+        gap: 12px;
     }
 
     .stat-icon {
-        width: 44px;
-        height: 44px;
+        width: 42px;
+        height: 42px;
         border-radius: 10px;
     }
 
     .stat-icon i {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
     .stat-number {
-        font-size: 1.4rem;
+        font-size: 1.3rem;
     }
 
     .admin-card-header {
-        padding: 14px 16px;
+        padding: 12px 14px;
     }
 
     .admin-card-body {
-        padding: 16px;
+        padding: 14px;
     }
 
     .admin-table {
-        font-size: 0.82rem;
+        font-size: 0.8rem;
     }
 
     .admin-table thead th,
     .admin-table tbody td {
-        padding: 10px 12px;
+        padding: 10px 10px;
     }
 
     .asap-toast {
-        left: 16px;
-        right: 16px;
-        bottom: 16px;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+    }
+
+    .admin-footer {
+        padding: 14px 12px;
+    }
+
+    .modal-dialog {
+        margin: 8px;
+    }
+
+    .modal-body {
+        padding: 16px !important;
+    }
+
+    .img-gallery-item {
+        width: 80px;
+        height: 65px;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-content {
+        padding: 12px 8px;
+    }
+
+    .stat-card {
+        padding: 14px 12px;
+    }
+
+    .stat-number {
+        font-size: 1.1rem;
+    }
+
+    .stat-label {
+        font-size: .7rem;
+    }
+
+    .admin-topbar {
+        padding: 12px 14px;
+    }
+
+    .admin-topbar h5 {
+        font-size: 1rem;
     }
 }
