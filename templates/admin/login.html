@@ -70,7 +70,8 @@
         }
 
         .login-logo img {
-            height: 40px;
+            height: 80px;
+            border-radius: 12px;
         }
 
         .login-logo h4 {
@@ -183,7 +184,7 @@
 <body>
     <div class="login-card">
         <div class="login-logo">
-            <img src="/assets/img/logo/white-logo.png" alt="ASAP">
+            <img src="/assets/img/logo/logo.jpg" alt="ASAP Food Trailers">
             <h4>Admin Portal</h4>
             <p>Sign in to manage your platform</p>
         </div>
@@ -210,8 +211,6 @@
         <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Website</a>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async function (e) {
             e.preventDefault();

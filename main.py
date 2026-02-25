@@ -234,35 +234,23 @@ async def admin_leads(request: Request):
 async def api_auth_login(request: Request):
     """API: Admin login endpoint."""
     body = await request.json()
-    email = body.get("email", "")
+    email = body.get("email", "").strip().lower()
     password = body.get("password", "")
 
-    # Local development mode — simple credentials
-    if settings.APP_MODE == "local":
-        if email == "admin@asapfoodtrailer.com" and password == "admin123":
-            from starlette.responses import JSONResponse
+    # Admin credentials check (works in both local and firebase modes)
+    admin_password = os.getenv("ADMIN_PASSWORD", "Admin2026!")
+    admin_emails = [e.lower() for e in settings.ADMIN_EMAILS]
 
-            response = JSONResponse({"success": True, "redirect": "/admin/dashboard"})
-            response.set_cookie(
-                "admin_token", "dev-admin-token", httponly=True, max_age=86400
-            )
-            return response
-        return {"success": False, "detail": "Invalid email or password"}
+    if email in admin_emails and password == admin_password:
+        import hashlib, time
 
-    # Firebase mode — verify with Firebase Auth
-    try:
-        token = auth_service.verify_admin_token(body.get("token", ""))
-        if token:
-            from starlette.responses import JSONResponse
+        token = hashlib.sha256(f"{email}{time.time()}".encode()).hexdigest()
+        from starlette.responses import JSONResponse
 
-            response = JSONResponse({"success": True, "redirect": "/admin/dashboard"})
-            response.set_cookie(
-                "admin_token", body.get("token", ""), httponly=True, max_age=86400
-            )
-            return response
-        return {"success": False, "detail": "Access denied. Not an admin account."}
-    except Exception:
-        return {"success": False, "detail": "Authentication failed"}
+        response = JSONResponse({"success": True, "redirect": "/admin/dashboard"})
+        response.set_cookie("admin_token", token, httponly=True, max_age=86400)
+        return response
+    return {"success": False, "detail": "Invalid email or password"}
 
 
 @app.get("/api/trucks")

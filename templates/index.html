@@ -88,6 +88,18 @@
         background: #ff6b00;
         border-color: #ff6b00;
     }
+
+    /* Ensure hero buttons are clickable above overlay */
+    .hero2-content .button a {
+        position: relative;
+        z-index: 5;
+        pointer-events: auto;
+    }
+
+    .hero2-content .button {
+        position: relative;
+        z-index: 5;
+    }
 </style>
 {% endblock %}
 
@@ -325,7 +337,8 @@
         <!-- Mobile/Tablet image (hidden on desktop) -->
         <div class="d-lg-none text-center mb-4 mt-3">
             <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=75"
-                alt="Food truck preparation" style="border-radius:16px;width:100%;max-width:360px;aspect-ratio:4/3;object-fit:cover;">
+                alt="Food truck preparation"
+                style="border-radius:16px;width:100%;max-width:360px;aspect-ratio:4/3;object-fit:cover;">
         </div>
         <div class="row mt-30">
             <div class="col-lg mt-30">
@@ -382,21 +395,24 @@
         <div class="row align-items-center">
             <div class="col-lg-6 text-center text-lg-start">
                 <div class="heading1" data-aos="fade-right" data-aos-duration="800">
-                    <h2 style="color:#fff;font-size:clamp(1.5rem,4vw,2.2rem);">Ready to Start Your Mobile Food Business?</h2>
-                    <p class="mt-16" style="color:rgba(255,255,255,0.9);font-size:clamp(0.9rem,2vw,1.1rem);">Get expert advice, custom
+                    <h2 style="color:#fff;font-size:clamp(1.5rem,4vw,2.2rem);">Ready to Start Your Mobile Food Business?
+                    </h2>
+                    <p class="mt-16" style="color:rgba(255,255,255,0.9);font-size:clamp(0.9rem,2vw,1.1rem);">Get expert
+                        advice, custom
                         quotes, and financing options. Our team is ready to help you find the perfect food truck or
                         trailer.</p>
                 </div>
             </div>
             <div class="col-lg-6 mt-4 mt-lg-0">
-                <div class="d-flex gap-3 flex-column flex-sm-row flex-wrap justify-content-center justify-content-lg-end align-items-center">
-                    <a class="theme-btn1" href="/contact"
-                        style="background:#1a1a2e!important;border-color:#1a1a2e!important;width:100%;max-width:280px;text-align:center;" data-aos="fade-left"
-                        data-aos-duration="800"><span class="text" style="color:#fff;">Get a Free
-                            Quote </span><span class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"
-                                    style="color:#fff;"></i></span><span class="arrow2"><i class="bi bi-arrow-right"
-                                    style="color:#fff;"></i></span></span></a>
-                    <a href="https://wa.me/{{ business.whatsapp }}?text={{ 'Hi! I\'m interested in your food trucks. Can you send me more information?' | urlencode }}" target="_blank"
+                <div
+                    class="d-flex gap-3 flex-column flex-sm-row flex-wrap justify-content-center justify-content-lg-end align-items-center">
+                    <a href="/contact"
+                        style="display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 28px;background:#1a1a2e;color:#fff;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.3);width:100%;max-width:280px;"
+                        data-aos="fade-left" data-aos-duration="800">
+                        <i class="bi bi-file-earmark-text" style="font-size:1.2rem;"></i> Get a Free Quote
+                    </a>
+                    <a href="https://wa.me/{{ business.whatsapp }}?text={{ 'Hi! I\'m interested in your food trucks. Can you send me more information?' | urlencode }}"
+                        target="_blank"
                         style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:#25d366;color:#fff;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);width:100%;max-width:280px;"
                         data-aos="fade-left" data-aos-duration="1000">
                         <i class="bi bi-whatsapp" style="font-size:1.3rem;"></i> Chat on WhatsApp
