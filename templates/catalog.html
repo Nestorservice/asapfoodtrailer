@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="inner-hero bg-cover"
+    style="background: linear-gradient(135deg, rgba(10,10,10,0.85), rgba(10,10,10,0.6)), url('https://images.unsplash.com/photo-1567129937968-cdad8f07e2f8?w=1400&q=70'); background-size: cover; background-position: center; padding: 160px 0 80px;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="heading1">
+                    <span class="sub-title2" style="color:#ff6b00;">Our Fleet</span>
+                    <h1 style="color:#fff; font-family:'Outfit',sans-serif; font-weight:900;">Browse Inventory</h1>
+                    <nav aria-label="breadcrumb" class="mt-16">
+                        <ol class="breadcrumb" style="background:transparent;padding:0;">
+                            <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,.7);">Home</a></li>
+                            <li class="breadcrumb-item active" style="color:#ff6b00;">Inventory</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sp">
+    <div class="container">
+        <div class="row">
+            <!-- Filters Sidebar -->
+            <div class="col-lg-3">
+                <div class="asap-filters-sidebar" data-aos="fade-right" data-aos-duration="800">
+                    <h5 style="font-weight:700;margin-bottom:24px;"><i class="bi bi-funnel"></i> Filters</h5>
+                    <form action="/catalog" method="get">
+                        <div class="mb-4">
+                            <label class="form-label">Category</label>
+                            <select name="category" class="form-select">
+                                <option value="">All Types</option>
+                                <option value="truck" {{ 'selected' if filters.get('category')=='truck' }}>Food Trucks
+                                </option>
+                                <option value="trailer" {{ 'selected' if filters.get('category')=='trailer' }}>Food
+                                    Trailers</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Condition</label>
+                            <select name="condition" class="form-select">
+                                <option value="">Any Condition</option>
+                                <option value="new" {{ 'selected' if filters.get('condition')=='new' }}>New</option>
+                                <option value="used" {{ 'selected' if filters.get('condition')=='used' }}>Used</option>
+                                <option value="custom" {{ 'selected' if filters.get('condition')=='custom' }}>Custom
+                                    Built</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Usage</label>
+                            <select name="usage" class="form-select">
+                                <option value="">Buy or Rent</option>
+                                <option value="sale" {{ 'selected' if filters.get('usage')=='sale' }}>For Sale</option>
+                                <option value="rent" {{ 'selected' if filters.get('usage')=='rent' }}>For Rent</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label">Search</label>
+                            <input type="text" name="search" class="form-control" placeholder="Keyword..."
+                                value="{{ filters.get('search', '') }}">
+                        </div>
+                        <button type="submit" class="theme-btn1 w-100" style="text-align:center;"><span
+                                class="text">Apply Filters </span><span class="arrow-all"><span class="arrow1"><i
+                                        class="bi bi-arrow-right"></i></span><span class="arrow2"><i
+                                        class="bi bi-arrow-right"></i></span></span></button>
+                        {% if filters %}
+                        <a href="/catalog" class="btn btn-outline-secondary w-100 mt-2" style="border-radius:8px;">Clear
+                            Filters</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Truck Grid -->
+            <div class="col-lg-9">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                    <p class="mb-0" style="color:#777;font-weight:500;">Showing <strong style="color:#1a1a2e;">{{
+                            trucks|length }}</strong> vehicles</p>
+                </div>
+
+                {% if trucks|length > 0 %}
+                <div class="row">
+                    {% for truck in trucks %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="asap-truck-card mt-30" data-aos="fade-up"
+                            data-aos-duration="{{ 600 + loop.index0 * 100 }}">
+                            <div class="truck-card-image">
+                                {% if truck.images and truck.images|length > 0 %}
+                                <img src="{{ truck.images[0] }}" alt="{{ truck.title }}" loading="lazy">
+                                {% else %}
+                                <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=500&q=75"
+                                    alt="{{ truck.title }}" loading="lazy">
+                                {% endif %}
+                                <div class="truck-card-badges">
+                                    {% if truck.condition == 'new' %}
+                                    <span class="badge bg-success">New</span>
+                                    {% elif truck.condition == 'used' %}
+                                    <span class="badge bg-warning text-dark">Used</span>
+                                    {% else %}
+                                    <span class="badge" style="background:#ff6b00;">Custom</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="truck-card-body">
+                                <h5><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h5>
+                                <p class="truck-card-desc">{{ truck.description[:80] }}...</p>
+                                <div class="truck-card-specs">
+                                    <span><i class="bi bi-rulers"></i> {{ truck.specs.length | default('—') }}</span>
+                                    <span><i class="bi bi-lightning"></i> {{ truck.specs.voltage | default('—')
+                                        }}</span>
+                                </div>
+                                <div class="truck-card-footer">
+                                    <div class="truck-price">
+                                        {% if truck.usage == 'rent' %}
+                                        <span class="price">${{ "{:,.0f}".format(truck.price)
+                                            }}</span><small>/mo</small>
+                                        {% else %}
+                                        <span class="price">${{ "{:,.0f}".format(truck.price) }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="/{{ truck.category }}/{{ truck.slug }}" class="theme-btn1"
+                                        style="padding:8px 16px;font-size:.82rem;"><span class="text">View </span><span
+                                            class="arrow-all"><span class="arrow1"><i
+                                                    class="bi bi-arrow-right"></i></span><span class="arrow2"><i
+                                                    class="bi bi-arrow-right"></i></span></span></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-search" style="font-size:3rem;color:#ccc;"></i>
+                    <h4 class="mt-3" style="font-weight:700;">No vehicles found</h4>
+                    <p style="color:#777;">Try adjusting your filters or <a href="/catalog"
+                            style="color:#ff6b00;">browse all inventory</a>.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

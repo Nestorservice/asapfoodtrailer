@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Page Header -->
+<div class="inner-hero bg-cover"
+    style="background: linear-gradient(135deg, rgba(10,10,10,0.85), rgba(10,10,10,0.6)), url('{{ truck.images[0] if truck.images else "" }}'); background-size: cover; background-position: center; padding: 160px 0 80px;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="heading1">
+                    <span class="sub-title2" style="color:#ff6b00;">{{ truck.category | capitalize }}</span>
+                    <h1 style="color:#fff; font-family:'Outfit',sans-serif; font-weight:900;">{{ truck.title }}</h1>
+                    <nav aria-label="breadcrumb" class="mt-16">
+                        <ol class="breadcrumb" style="background:transparent;padding:0;">
+                            <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,.7);">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/catalog"
+                                    style="color:rgba(255,255,255,.7);">Inventory</a></li>
+                            <li class="breadcrumb-item active" style="color:#ff6b00;">{{ truck.title }}</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sp">
+    <div class="container">
+        <div class="row">
+            <!-- Gallery -->
+            <div class="col-lg-7">
+                <div class="asap-gallery" data-aos="fade-right" data-aos-duration="800">
+                    <div class="swiper gallery-main" style="border-radius:16px;overflow:hidden;">
+                        <div class="swiper-wrapper">
+                            {% for img in truck.images %}
+                            <div class="swiper-slide">
+                                <img src="{{ img }}" alt="{{ truck.title }}"
+                                    style="width:100%;height:450px;object-fit:cover;">
+                            </div>
+                            {% endfor %}
+                            {% if not truck.images %}
+                            <div class="swiper-slide">
+                                <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=800&q=80"
+                                    alt="{{ truck.title }}" style="width:100%;height:450px;object-fit:cover;">
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="swiper-button-next"></div>
+                        <div class="swiper-button-prev"></div>
+                    </div>
+                    {% if truck.images and truck.images|length > 1 %}
+                    <div class="swiper gallery-thumbs mt-3">
+                        <div class="swiper-wrapper">
+                            {% for img in truck.images %}
+                            <div class="swiper-slide" style="cursor:pointer;">
+                                <img src="{{ img }}" alt=""
+                                    style="width:100%;height:80px;object-fit:cover;border-radius:8px;">
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="col-lg-5">
+                <div class="asap-detail-info" data-aos="fade-left" data-aos-duration="800">
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
+                        {% if truck.condition == 'new' %}
+                        <span class="badge bg-success" style="font-size:.8rem;padding:6px 14px;">New</span>
+                        {% elif truck.condition == 'used' %}
+                        <span class="badge bg-warning text-dark" style="font-size:.8rem;padding:6px 14px;">Used</span>
+                        {% else %}
+                        <span class="badge" style="background:#ff6b00;font-size:.8rem;padding:6px 14px;">Custom
+                            Built</span>
+                        {% endif %}
+                        <span class="badge bg-light text-dark" style="font-size:.8rem;padding:6px 14px;">{{
+                            truck.category | capitalize }}</span>
+                        {% if truck.status == 'available' %}
+                        <span class="badge bg-success" style="font-size:.8rem;padding:6px 14px;">Available</span>
+                        {% endif %}
+                    </div>
+                    <h2 style="font-family:'Outfit',sans-serif;font-weight:800;font-size:1.6rem;">{{ truck.title }}</h2>
+                    <div class="asap-price-tag mt-3 mb-4" style="padding:20px;background:#f8f9fa;border-radius:12px;">
+                        {% if truck.usage == 'rent' %}
+                        <span class="price-amount">${{ "{:,.0f}".format(truck.price) }}</span>
+                        <span class="price-period"> / month</span>
+                        {% else %}
+                        <span class="price-amount">${{ "{:,.0f}".format(truck.price) }}</span>
+                        {% endif %}
+                    </div>
+                    <p style="color:#555;line-height:1.7;">{{ truck.description }}</p>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button class="theme-btn1" onclick="document.getElementById('quoteModal').style.display='flex'"
+                            style="text-align:center;width:100%;"><span class="text">Request a Quote </span><span
+                                class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                                    class="arrow2"><i class="bi bi-arrow-right"></i></span></span></button>
+                        {% set wa_detail_msg = "Hi! 👋 I'm interested in the *" ~ truck.title ~ "* ($" ~
+                        "{:,.0f}".format(truck.price) ~ "). Could you share more details?" %}
+                        <a href="https://wa.me/{{ business.whatsapp }}?text={{ wa_detail_msg | urlencode }}"
+                            target="_blank" class="btn"
+                            style="border-radius:8px;padding:12px;font-weight:600;background:#25d366;color:#fff;border:none;">
+                            <i class="bi bi-whatsapp"></i> Chat on WhatsApp</a>
+                        <a href="tel:{{ business.phone }}" class="btn btn-outline-dark"
+                            style="border-radius:8px;padding:12px;font-weight:600;"><i class="bi bi-telephone"></i> Call
+                            Now — {{ business.phone }}</a>
+                        <a href="sms:+{{ business.whatsapp }}?body={{ ('Hi, I\'m interested in ' ~ truck.title ~ '. Can you share more info?') | urlencode }}"
+                            class="btn btn-outline-secondary" style="border-radius:8px;padding:12px;font-weight:600;"><i
+                                class="bi bi-chat-dots"></i> Send SMS</a>
+                    </div>
+
+                    <!-- Share -->
+                    <div class="mt-4 d-flex gap-2 align-items-center">
+                        <span style="font-weight:600;font-size:.85rem;color:#777;">Share:</span>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}" target="_blank"
+                            style="color:#777;"><i class="bi bi-facebook"></i></a>
+                        <a href="https://twitter.com/intent/tweet?url={{ request.url }}&text={{ truck.title | urlencode }}"
+                            target="_blank" style="color:#777;"><i class="bi bi-twitter-x"></i></a>
+                        <a href="https://wa.me/?text={{ (truck.title ~ ' - Check it out: ' ~ request.url | string) | urlencode }}"
+                            target="_blank" style="color:#777;"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Specs -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="asap-specs-section" data-aos="fade-up" data-aos-duration="800">
+                    <h4 style="font-weight:800;margin-bottom:24px;">Technical Specifications</h4>
+                    <div class="row g-3">
+                        {% if truck.specs.length %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-rulers"></i>
+                                <div><span class="spec-label">Length</span><span class="spec-value">{{
+                                        truck.specs.length }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.width %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-arrows"></i>
+                                <div><span class="spec-label">Width</span><span class="spec-value">{{ truck.specs.width
+                                        }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.height %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-arrow-up"></i>
+                                <div><span class="spec-label">Height</span><span class="spec-value">{{
+                                        truck.specs.height }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.voltage %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-lightning"></i>
+                                <div><span class="spec-label">Electrical</span><span class="spec-value">{{
+                                        truck.specs.voltage }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.gas %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-fire"></i>
+                                <div><span class="spec-label">Gas</span><span class="spec-value">{{ truck.specs.gas
+                                        }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.plumbing %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-droplet"></i>
+                                <div><span class="spec-label">Plumbing</span><span class="spec-value">{{
+                                        truck.specs.plumbing }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.generator %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-gear"></i>
+                                <div><span class="spec-label">Generator</span><span class="spec-value">{{
+                                        truck.specs.generator }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% if truck.specs.hood_system %}
+                        <div class="col-md-4 col-6">
+                            <div class="spec-item"><i class="bi bi-wind"></i>
+                                <div><span class="spec-label">Hood System</span><span class="spec-value">{{
+                                        truck.specs.hood_system }}</span></div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if truck.specs.equipment and truck.specs.equipment|length > 0 %}
+                    <h5 class="mt-4 mb-3" style="font-weight:700;">Equipment Included</h5>
+                    <div class="row g-2">
+                        {% for item in truck.specs.equipment %}
+                        <div class="col-md-4 col-6">
+                            <div class="equipment-item"><i class="bi bi-check-circle" style="color:#198754;"></i> {{
+                                item }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Related -->
+        {% if related_trucks and related_trucks|length > 0 %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="heading1">
+                    <h4 style="font-weight:800;">Related Vehicles</h4>
+                </div>
+            </div>
+            {% for rt in related_trucks[:3] %}
+            {% if rt.id != truck.id %}
+            <div class="col-lg-4 col-md-6">
+                <div class="asap-truck-card mt-30">
+                    <div class="truck-card-image">
+                        <img src="{{ rt.images[0] if rt.images else 'https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=500&q=75' }}"
+                            alt="{{ rt.title }}" loading="lazy">
+                    </div>
+                    <div class="truck-card-body">
+                        <h5><a href="/{{ rt.category }}/{{ rt.slug }}">{{ rt.title }}</a></h5>
+                        <div class="truck-card-footer">
+                            <span class="price">${{ "{:,.0f}".format(rt.price) }}</span>
+                            <a href="/{{ rt.category }}/{{ rt.slug }}" class="theme-btn1"
+                                style="padding:8px 16px;font-size:.82rem;"><span class="text">View </span><span
+                                    class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                                        class="arrow2"><i class="bi bi-arrow-right"></i></span></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Quote Modal -->
+<div id="quoteModal"
+    style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
+    <div style="background:#fff;border-radius:16px;max-width:500px;width:100%;padding:40px;position:relative;">
+        <button onclick="this.parentElement.parentElement.style.display='none'"
+            style="position:absolute;top:16px;right:16px;border:none;background:none;font-size:1.5rem;cursor:pointer;color:#777;"><i
+                class="bi bi-x-lg"></i></button>
+        <h4 style="font-weight:800;margin-bottom:8px;">Request a Quote</h4>
+        <p style="color:#777;font-size:.9rem;margin-bottom:24px;">{{ truck.title }}</p>
+        <form id="quoteForm">
+            <input type="hidden" name="truck_id" value="{{ truck.id }}">
+            <div class="mb-3"><input type="text" name="customer_name" class="form-control" placeholder="Your Name"
+                    required style="border-radius:8px;padding:12px;"></div>
+            <div class="mb-3"><input type="email" name="email" class="form-control" placeholder="Email Address" required
+                    style="border-radius:8px;padding:12px;"></div>
+            <div class="mb-3"><input type="tel" name="phone" class="form-control" placeholder="Phone Number"
+                    style="border-radius:8px;padding:12px;"></div>
+            <div class="mb-3"><textarea name="message" class="form-control" rows="3" placeholder="Message (optional)"
+                    style="border-radius:8px;padding:12px;"></textarea></div>
+            <button type="submit" class="theme-btn1 w-100" style="text-align:center;"><span class="text">Send Request
+                </span><span class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                        class="arrow2"><i class="bi bi-arrow-right"></i></span></span></button>
+        </form>
+        <div id="quoteSuccess" style="display:none;" class="text-center py-4">
+            <i class="bi bi-check-circle" style="font-size:3rem;color:#198754;"></i>
+            <h5 class="mt-3" style="font-weight:700;">Quote Request Sent!</h5>
+            <p style="color:#777;">We'll get back to you within 24 hours.</p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Gallery slider
+        var thumbs = null;
+        if (document.querySelector('.gallery-thumbs')) {
+            thumbs = new Swiper('.gallery-thumbs', {
+                spaceBetween: 10, slidesPerView: 4, freeMode: true, watchSlidesProgress: true,
+            });
+        }
+        if (document.querySelector('.gallery-main')) {
+            new Swiper('.gallery-main', {
+                spaceBetween: 10,
+                navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+                thumbs: thumbs ? { swiper: thumbs } : undefined,
+            });
+        }
+
+        // Quote form
+        var form = document.getElementById('quoteForm');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var fd = new FormData(form);
+                fetch('/api/leads', { method: 'POST', body: fd })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.success) {
+                            form.style.display = 'none';
+                            document.getElementById('quoteSuccess').style.display = 'block';
+                        }
+                    }).catch(function () {
+                        alert('Error sending request. Please try again.');
+                    });
+            });
+        }
+    });
+</script>
+{% endblock %}

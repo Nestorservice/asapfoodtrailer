@@ -1,0 +1,476 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+<style>
+    .hero2-area {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hero2-area .swiper-slide {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+    }
+
+    .hero2-area .main-bg-image {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+    }
+
+    .hero2-area .main-bg-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .hero2-area .main-bg-image::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(10, 10, 10, 0.85) 0%, rgba(10, 10, 10, 0.4) 60%, rgba(255, 107, 0, 0.15) 100%);
+    }
+
+    .hero2-content {
+        position: relative;
+        z-index: 2;
+        padding: 160px 0 120px;
+    }
+
+    .hero2-heading span.sub-title {
+        display: inline-block;
+        color: #ff6b00;
+        font-weight: 700;
+        font-size: 0.95rem;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 16px;
+    }
+
+    .hero2-heading h1 {
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 900;
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        line-height: 1.1;
+        margin-bottom: 20px;
+    }
+
+    .hero2-heading p {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1rem;
+        max-width: 520px;
+        line-height: 1.7;
+    }
+
+    .hero2-slider-btns {
+        position: absolute;
+        bottom: 40px;
+        right: 60px;
+        z-index: 10;
+        display: flex;
+        gap: 12px;
+    }
+
+    .hero2-slider-btns button {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        background: transparent;
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .hero2-slider-btns button:hover {
+        background: #ff6b00;
+        border-color: #ff6b00;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO SECTION ═══ -->
+<div class="hero2-area _relative">
+    <div class="swiper hero-swiper _relative">
+        <div class="swiper-wrapper">
+            <div class="swiper-slide">
+                <div class="main-bg-image">
+                    <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=1920&q=80"
+                        alt="Food Truck">
+                </div>
+                <div class="hero2-content">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-lg-7">
+                                <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
+                                    <span class="sub-title">Premium Food Trucks & Trailers</span>
+                                    <h1>Launch Your Mobile Food Business Today</h1>
+                                    <p class="mt-16">Industry-leading selection of new, used, and custom-built food
+                                        trucks and trailers. Built for entrepreneurs who demand quality.</p>
+                                    <div class="button mt-30 d-flex gap-3 flex-wrap">
+                                        <a class="theme-btn1" href="/catalog"><span class="text">Browse Inventory
+                                            </span><span class="arrow-all"><span class="arrow1"><i
+                                                        class="bi bi-arrow-right"></i></span><span class="arrow2"><i
+                                                        class="bi bi-arrow-right"></i></span></span></a>
+                                        <a class="theme-btn1 btn-outline" href="/contact"
+                                            style="background:transparent!important;border:2px solid rgba(255,255,255,.4)!important;"><span
+                                                class="text">Get a Quote </span><span class="arrow-all"><span
+                                                    class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                                                    class="arrow2"><i class="bi bi-arrow-right"></i></span></span></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-slide">
+                <div class="main-bg-image">
+                    <img src="https://images.unsplash.com/photo-1567129937968-cdad8f07e2f8?w=1920&q=80"
+                        alt="Food Trailer">
+                </div>
+                <div class="hero2-content">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-lg-7">
+                                <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
+                                    <span class="sub-title">Custom Built to Your Vision</span>
+                                    <h1>Your Dream Kitchen On Wheels</h1>
+                                    <p class="mt-16">From concept to delivery, we build custom food trucks tailored
+                                        exactly to your menu, workflow, and brand identity.</p>
+                                    <div class="button mt-30">
+                                        <a class="theme-btn1" href="/contact"><span class="text">Request a Callback
+                                            </span><span class="arrow-all"><span class="arrow1"><i
+                                                        class="bi bi-arrow-right"></i></span><span class="arrow2"><i
+                                                        class="bi bi-arrow-right"></i></span></span></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="swiper-slide">
+                <div class="main-bg-image">
+                    <img src="https://images.unsplash.com/photo-1509315811345-a59bc4ca1f88?w=1920&q=80"
+                        alt="Street Food">
+                </div>
+                <div class="hero2-content">
+                    <div class="container">
+                        <div class="row align-items-center">
+                            <div class="col-lg-7">
+                                <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
+                                    <span class="sub-title">Flexible Leasing Available</span>
+                                    <h1>Start Serving Without the Big Investment</h1>
+                                    <p class="mt-16">Affordable rental and lease-to-own options so you can start your
+                                        food business with minimal upfront cost.</p>
+                                    <div class="button mt-30">
+                                        <a class="theme-btn1" href="/catalog?usage=rent"><span class="text">Explore
+                                                Rentals </span><span class="arrow-all"><span class="arrow1"><i
+                                                        class="bi bi-arrow-right"></i></span><span class="arrow2"><i
+                                                        class="bi bi-arrow-right"></i></span></span></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero2-slider-btns">
+        <button class="hero-prev"><i class="bi bi-chevron-left"></i></button>
+        <button class="hero-next"><i class="bi bi-chevron-right"></i></button>
+    </div>
+</div>
+
+<!-- ═══ FLEET STATS COUNTERS ═══ -->
+<div class="counters2 bg-cover" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-3 col-md-6">
+                <div data-aos="zoom-out" data-aos-duration="800">
+                    <div class="counters2-box">
+                        <div class="icon"><i class="bi bi-truck" style="font-size:2.4rem;color:#ff6b00;"></i></div>
+                        <div class="text">
+                            <h3><span class="counter" data-count="{{ fleet_stats.total | default(50) }}">0</span>+</h3>
+                            <p>Vehicles in Fleet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div data-aos="zoom-out" data-aos-duration="1000">
+                    <div class="counters2-box">
+                        <div class="icon"><i class="bi bi-check-circle" style="font-size:2.4rem;color:#ff6b00;"></i>
+                        </div>
+                        <div class="text">
+                            <h3><span class="counter" data-count="{{ fleet_stats.available | default(30) }}">0</span>
+                            </h3>
+                            <p>Ready to Ship</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div data-aos="zoom-out" data-aos-duration="1200">
+                    <div class="counters2-box">
+                        <div class="icon"><i class="bi bi-people" style="font-size:2.4rem;color:#ff6b00;"></i></div>
+                        <div class="text">
+                            <h3><span class="counter" data-count="500">0</span>+</h3>
+                            <p>Happy Clients</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div data-aos="zoom-out" data-aos-duration="800">
+                    <div class="counters2-box">
+                        <div class="icon"><i class="bi bi-headset" style="font-size:2.4rem;color:#ff6b00;"></i></div>
+                        <div class="text">
+                            <h3>24/7</h3>
+                            <p>Customer Support</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ FEATURED INVENTORY ═══ -->
+<div class="solutions2 sp bg-cover">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 m-auto text-center">
+                <div class="heading1 text-center">
+                    <span class="sub-title2" data-aos="fade-left" data-aos-duration="900">Our Fleet</span>
+                    <h2 data-aos="fade-left" data-aos-duration="1200">Featured Inventory</h2>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-30">
+            {% for truck in featured_trucks[:6] %}
+            <div class="col-lg-4 col-md-6">
+                <div class="asap-truck-card mt-30" data-aos="fade-up" data-aos-duration="{{ 800 + loop.index0 * 200 }}">
+                    <div class="truck-card-image">
+                        {% if truck.images and truck.images|length > 0 %}
+                        <img src="{{ truck.images[0] }}" alt="{{ truck.title }}" loading="lazy">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=75"
+                            alt="{{ truck.title }}" loading="lazy">
+                        {% endif %}
+                        <div class="truck-card-badges">
+                            {% if truck.condition == 'new' %}
+                            <span class="badge bg-success">New</span>
+                            {% elif truck.condition == 'used' %}
+                            <span class="badge bg-warning text-dark">Used</span>
+                            {% else %}
+                            <span class="badge" style="background:#ff6b00;">Custom</span>
+                            {% endif %}
+                            {% if truck.featured %}
+                            <span class="badge bg-danger">Featured</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="truck-card-body">
+                        <h5><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h5>
+                        <p class="truck-card-desc">{{ truck.description[:100] }}...</p>
+                        <div class="truck-card-specs">
+                            <span><i class="bi bi-rulers"></i> {{ truck.specs.length | default('N/A') }}</span>
+                            <span><i class="bi bi-lightning"></i> {{ truck.specs.voltage | default('N/A') }}</span>
+                            <span><i class="bi bi-eye"></i> {{ truck.views | default(0) }} views</span>
+                        </div>
+                        <div class="truck-card-footer">
+                            <div class="truck-price">
+                                {% if truck.usage == 'rent' %}
+                                <span class="price">${{ "{:,.0f}".format(truck.price) }}</span><small>/mo</small>
+                                {% else %}
+                                <span class="price">${{ "{:,.0f}".format(truck.price) }}</span>
+                                {% endif %}
+                            </div>
+                            <a href="/{{ truck.category }}/{{ truck.slug }}" class="theme-btn1"
+                                style="padding:10px 20px;font-size:.85rem;"><span class="text">Details </span><span
+                                    class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                                        class="arrow2"><i class="bi bi-arrow-right"></i></span></span></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-50" data-aos="fade-up">
+            <a class="theme-btn1" href="/catalog"><span class="text">View Full Inventory </span><span
+                    class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"></i></span><span
+                        class="arrow2"><i class="bi bi-arrow-right"></i></span></span></a>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ WHY CHOOSE US ═══ -->
+<div class="delivery sp _relative z-2" style="background: #f8f9fa;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 m-auto">
+                <div class="heading1 text-center">
+                    <span class="sub-title2" data-aos="fade-left" data-aos-duration="800">Why ASAP Food Trailer</span>
+                    <h2 data-aos="fade-left" data-aos-duration="1000">How We Deliver Excellence</h2>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile/Tablet image (hidden on desktop) -->
+        <div class="d-lg-none text-center mb-4 mt-3">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=75"
+                alt="Food truck preparation" style="border-radius:16px;width:100%;max-width:360px;aspect-ratio:4/3;object-fit:cover;">
+        </div>
+        <div class="row mt-30">
+            <div class="col-lg mt-30">
+                <div class="delivery1-item-box">
+                    <div class="number text-end mr-30"><span>01</span></div>
+                    <div class="box" data-aos="flip-right" data-aos-duration="800">
+                        <h4><a href="/catalog">Browse & Select</a></h4>
+                        <p class="mt-10">Explore our curated inventory of premium food trucks, trailers, and custom
+                            builds.</p>
+                    </div>
+                </div>
+                <div class="delivery1-item-box mt-40">
+                    <div class="box" data-aos="flip-right" data-aos-duration="800">
+                        <h4><a href="/contact">Customize & Configure</a></h4>
+                        <p class="mt-10">Work with our experts to tailor every detail to your menu, brand, and workflow.
+                        </p>
+                    </div>
+                    <div class="number text-end mr-30"><span>02</span></div>
+                </div>
+            </div>
+            <!-- Desktop center image (hidden on mobile) -->
+            <div class="col-lg-5 d-none d-lg-block">
+                <div class="delivery1-images mt-50 text-center">
+                    <div class="main-image">
+                        <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=75"
+                            alt="Food truck preparation" style="border-radius:16px;">
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg mt-30">
+                <div class="delivery1-item-box">
+                    <div class="number ml-30"><span>03</span></div>
+                    <div class="box" data-aos="flip-right" data-aos-duration="800">
+                        <h4><a href="/contact">Financing & Delivery</a></h4>
+                        <p class="mt-10">Flexible financing options and nationwide delivery to get you serving fast.</p>
+                    </div>
+                </div>
+                <div class="delivery1-item-box mt-40">
+                    <div class="box" data-aos="flip-right" data-aos-duration="800">
+                        <h4><a href="/contact">Launch & Support</a></h4>
+                        <p class="mt-10">Ongoing maintenance, warranty, and 24/7 support to keep you running.</p>
+                    </div>
+                    <div class="number ml-30"><span>04</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ CTA SECTION ═══ -->
+<div class="cta1 bg-cover _relative"
+    style="background: linear-gradient(135deg, rgba(255,107,0,0.95), rgba(230,80,0,0.95)), url('https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=1200&q=50'); background-size: cover; background-position: center;">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 text-center text-lg-start">
+                <div class="heading1" data-aos="fade-right" data-aos-duration="800">
+                    <h2 style="color:#fff;font-size:clamp(1.5rem,4vw,2.2rem);">Ready to Start Your Mobile Food Business?</h2>
+                    <p class="mt-16" style="color:rgba(255,255,255,0.9);font-size:clamp(0.9rem,2vw,1.1rem);">Get expert advice, custom
+                        quotes, and financing options. Our team is ready to help you find the perfect food truck or
+                        trailer.</p>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-4 mt-lg-0">
+                <div class="d-flex gap-3 flex-column flex-sm-row flex-wrap justify-content-center justify-content-lg-end align-items-center">
+                    <a class="theme-btn1" href="/contact"
+                        style="background:#1a1a2e!important;border-color:#1a1a2e!important;width:100%;max-width:280px;text-align:center;" data-aos="fade-left"
+                        data-aos-duration="800"><span class="text" style="color:#fff;">Get a Free
+                            Quote </span><span class="arrow-all"><span class="arrow1"><i class="bi bi-arrow-right"
+                                    style="color:#fff;"></i></span><span class="arrow2"><i class="bi bi-arrow-right"
+                                    style="color:#fff;"></i></span></span></a>
+                    <a href="https://wa.me/{{ business.whatsapp }}?text={{ 'Hi! I\'m interested in your food trucks. Can you send me more information?' | urlencode }}" target="_blank"
+                        style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:#25d366;color:#fff;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);width:100%;max-width:280px;"
+                        data-aos="fade-left" data-aos-duration="1000">
+                        <i class="bi bi-whatsapp" style="font-size:1.3rem;"></i> Chat on WhatsApp
+                    </a>
+                    <a href="tel:{{ business.phone }}"
+                        style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.4);border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;width:100%;max-width:280px;"
+                        data-aos="fade-left" data-aos-duration="1200">
+                        <i class="bi bi-telephone"></i> {{ business.phone }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ TESTIMONIALS ═══ -->
+{% if testimonials and testimonials|length > 0 %}
+<div class="sp" style="background:#fff;">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 m-auto text-center">
+                <div class="heading1 text-center">
+                    <span class="sub-title2" data-aos="fade-left" data-aos-duration="800">Testimonials</span>
+                    <h2 data-aos="fade-left" data-aos-duration="1000">What Our Clients Say</h2>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-40">
+            {% for t in testimonials[:3] %}
+            <div class="col-lg-4 col-md-6">
+                <div class="asap-testimonial-card mt-30" data-aos="fade-up"
+                    data-aos-duration="{{ 800 + loop.index0 * 200 }}">
+                    <div class="testimonial-stars">
+                        {% for i in range(t.rating | default(5)) %}
+                        <i class="bi bi-star-fill" style="color:#ff6b00;"></i>
+                        {% endfor %}
+                    </div>
+                    <p class="testimonial-text">"{{ t.text }}"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar"
+                            style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff8c33);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem;">
+                            {{ t.name[0] }}</div>
+                        <div class="author-info">
+                            <h6>{{ t.name }}</h6>
+                            <span>{{ t.role | default('Business Owner') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Hero slider
+        if (document.querySelector('.hero-swiper')) {
+            new Swiper('.hero-swiper', {
+                loop: true,
+                autoplay: { delay: 6000, disableOnInteraction: false },
+                speed: 1000,
+                effect: 'fade',
+                fadeEffect: { crossFade: true },
+                navigation: {
+                    nextEl: '.hero-next',
+                    prevEl: '.hero-prev',
+                },
+            });
+        }
+    });
+</script>
+{% endblock %}

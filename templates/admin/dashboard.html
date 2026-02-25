@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — ASAP Admin</title>
+    <link rel="shortcut icon" href="/assets/img/logo/favicon.svg" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <style>
+        .mini-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .78rem;
+            color: #777;
+            margin-top: 4px;
+        }
+
+        .mini-stat .up {
+            color: #198754;
+        }
+
+        .mini-stat .down {
+            color: #dc3545;
+        }
+
+        .lead-row-vehicle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lead-row-vehicle img {
+            width: 44px;
+            height: 34px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .lead-row-vehicle .no-img {
+            width: 44px;
+            height: 34px;
+            border-radius: 6px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .wa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: #25d366;
+            color: #fff !important;
+            font-size: .78rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .3s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .wa-btn:hover {
+            background: #1da851;
+            transform: translateY(-1px);
+        }
+
+        .chart-container {
+            position: relative;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+        }
+
+        .kpi-item {
+            text-align: center;
+            padding: 16px 8px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .kpi-item h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .kpi-item small {
+            font-size: .78rem;
+            color: #999;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <img src="/assets/img/logo/white-logo.png" alt="ASAP" class="sidebar-logo">
+            <button class="sidebar-close d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <a href="/admin/inventory" class="nav-item"><i class="bi bi-truck"></i> Inventory</a>
+            <a href="/admin/leads" class="nav-item"><i class="bi bi-person-lines-fill"></i> Leads</a>
+            <div class="nav-divider"></div>
+            <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
+            <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="topbar-toggle d-lg-none" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                <h5 class="mb-0" style="font-family:'Outfit',sans-serif;font-weight:800;">Dashboard</h5>
+            </div>
+            <div class="topbar-right d-flex align-items-center gap-3">
+                <span class="d-none d-md-inline" style="color:#777;font-size:.85rem;"><i class="bi bi-clock"></i> Last
+                    30 days</span>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <!-- ══ STATS ROW 1 ══ -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#ff6b00,#ff8c33);"><i
+                                class="bi bi-truck"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Fleet</span>
+                            <h3 class="stat-number">{{ fleet_stats.total | default(0) }}</h3>
+                            <div class="mini-stat"><span class="up"><i class="bi bi-check-circle"></i> {{
+                                    fleet_stats.available | default(0) }} available</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#198754,#27c66f);"><i
+                                class="bi bi-currency-dollar"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Fleet Value</span>
+                            {% set total_value = all_trucks | sum(attribute='price') if all_trucks else 0 %}
+                            <h3 class="stat-number">${{ "{:,.0f}".format(total_value) }}</h3>
+                            <div class="mini-stat"><span class="up"><i class="bi bi-graph-up-arrow"></i> Total inventory
+                                    value</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#0d6efd,#3d8bfd);"><i
+                                class="bi bi-eye"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Views</span>
+                            <h3 class="stat-number">{{ analytics.total_views | default(0) }}</h3>
+                            <div class="mini-stat"><span class="up"><i class="bi bi-graph-up-arrow"></i> Last 30
+                                    days</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background:linear-gradient(135deg,#dc3545,#e35d6a);"><i
+                                class="bi bi-person-plus"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Leads</span>
+                            <h3 class="stat-number">{{ recent_leads | length }}</h3>
+                            <div class="mini-stat">
+                                {% set new_leads = recent_leads | selectattr('status', 'equalto', 'new') | list %}
+                                <span class="{{ 'up' if new_leads|length > 0 else '' }}">
+                                    <i class="bi bi-bell"></i> {{ new_leads|length }} new
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ CHARTS ROW ══ -->
+            <div class="row g-4 mb-4">
+                <!-- Traffic Overview -->
+                <div class="col-lg-8">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-graph-up"></i> Traffic Overview</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="chart-container" style="height:280px;">
+                                <canvas id="trafficChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Device Breakdown -->
+                <div class="col-lg-4">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-phone"></i> Device Breakdown</h6>
+                        </div>
+                        <div class="admin-card-body d-flex align-items-center justify-content-center">
+                            <div class="chart-container" style="height:240px;width:100%;">
+                                <canvas id="deviceChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ ANALYTICS ROW 2 ══ -->
+            <div class="row g-4 mb-4">
+                <!-- Leads Funnel -->
+                <div class="col-lg-4">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-funnel"></i> Leads Funnel</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="chart-container" style="height:250px;">
+                                <canvas id="funnelChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Category Breakdown -->
+                <div class="col-lg-4">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-pie-chart"></i> Inventory by Category</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="chart-container" style="height:250px;">
+                                <canvas id="categoryChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- KPIs -->
+                <div class="col-lg-4">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-bar-chart-line"></i> Key Metrics</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="kpi-grid">
+                                {% set avg_price = (total_value / all_trucks|length) if all_trucks|length > 0 else 0 %}
+                                <div class="kpi-item">
+                                    <h4>${{ "{:,.0f}".format(avg_price) }}</h4>
+                                    <small>Avg. Price</small>
+                                </div>
+                                <div class="kpi-item">
+                                    {% set total_views = all_trucks | sum(attribute='views') if all_trucks else 0 %}
+                                    <h4>{{ "{:,.0f}".format(total_views) }}</h4>
+                                    <small>Total Views</small>
+                                </div>
+                                <div class="kpi-item">
+                                    {% set avg_views = (total_views / all_trucks|length) if all_trucks|length > 0 else 0
+                                    %}
+                                    <h4>{{ "{:,.0f}".format(avg_views) }}</h4>
+                                    <small>Avg. Views/Unit</small>
+                                </div>
+                                <div class="kpi-item">
+                                    {% set new_count = all_trucks | selectattr('condition', 'equalto', 'new') | list |
+                                    length %}
+                                    <h4>{{ new_count }}</h4>
+                                    <small>New Units</small>
+                                </div>
+                                <div class="kpi-item">
+                                    {% set used_count = all_trucks | selectattr('condition', 'equalto', 'used') | list |
+                                    length %}
+                                    <h4>{{ used_count }}</h4>
+                                    <small>Used Units</small>
+                                </div>
+                                <div class="kpi-item">
+                                    {% set rent_count = all_trucks | selectattr('usage', 'equalto', 'rent') | list |
+                                    length %}
+                                    <h4>{{ rent_count }}</h4>
+                                    <small>For Rent</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ TABLES ROW ══ -->
+            <div class="row g-4 mb-4">
+                <!-- Most Viewed -->
+                <div class="col-lg-6">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-trophy"></i> Most Viewed Vehicles</h6>
+                        </div>
+                        <div class="admin-card-body p-0">
+                            {% if most_viewed and most_viewed|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table admin-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Vehicle</th>
+                                            <th>Views</th>
+                                            <th>Price</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for t in most_viewed %}
+                                        <tr>
+                                            <td>
+                                                <div class="lead-row-vehicle">
+                                                    {% if t.images and t.images|length > 0 %}
+                                                    <img src="{{ t.images[0] }}" alt="">
+                                                    {% else %}
+                                                    <div class="no-img"><i class="bi bi-truck" style="color:#ccc;"></i>
+                                                    </div>
+                                                    {% endif %}
+                                                    <span style="font-weight:600;">{{ t.title[:30] }}</span>
+                                                </div>
+                                            </td>
+                                            <td><strong>{{ t.views | default(0) }}</strong></td>
+                                            <td>${{ "{:,.0f}".format(t.price) }}</td>
+                                            <td><span
+                                                    class="badge {{ 'bg-success' if t.status=='available' else 'bg-secondary' }}">{{
+                                                    t.status | capitalize }}</span></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="empty-state"><i class="bi bi-bar-chart"></i>
+                                <p>No data yet</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Leads with Vehicle Info + WhatsApp -->
+                <div class="col-lg-6">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-person-lines-fill"></i> Recent Leads</h6>
+                            <a href="/admin/leads" class="btn btn-sm btn-outline-secondary"
+                                style="border-radius:8px;">View All</a>
+                        </div>
+                        <div class="admin-card-body p-0">
+                            {% if recent_leads and recent_leads|length > 0 %}
+                            <div class="table-responsive">
+                                <table class="table admin-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Client</th>
+                                            <th>Vehicle</th>
+                                            <th>Date</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for l in recent_leads[:8] %}
+                                        {% set truck = trucks_by_id.get(l.truck_id, none) if l.truck_id else none %}
+                                        <tr>
+                                            <td>
+                                                <strong>{{ l.customer_name }}</strong>
+                                                <div style="font-size:.75rem;color:#999;">{{ l.email }}</div>
+                                            </td>
+                                            <td>
+                                                {% if truck %}
+                                                <div class="lead-row-vehicle">
+                                                    {% if truck.images and truck.images|length > 0 %}
+                                                    <img src="{{ truck.images[0] }}" alt="">
+                                                    {% else %}
+                                                    <div class="no-img"><i class="bi bi-truck" style="color:#ccc;"></i>
+                                                    </div>
+                                                    {% endif %}
+                                                    <span style="font-size:.8rem;">{{ truck.title[:25] }}</span>
+                                                </div>
+                                                {% else %}
+                                                <span style="color:#aaa;font-size:.8rem;">General inquiry</span>
+                                                {% endif %}
+                                            </td>
+                                            <td style="font-size:.8rem;">{{ l.created_at[:10] if l.created_at else
+                                                (l.date[:10] if l.date else '—') }}</td>
+                                            <td>
+                                                {% set wa_msg = "Hello " ~ l.customer_name ~ "! 👋 Thank you for your
+                                                interest" %}
+                                                {% if truck %}
+                                                {% set wa_msg = wa_msg ~ " in our *" ~ truck.title ~ "* ($" ~
+                                                "{:,.0f}".format(truck.price) ~ "). " %}
+                                                {% else %}
+                                                {% set wa_msg = wa_msg ~ " in ASAP Food Trailer. " %}
+                                                {% endif %}
+                                                {% set wa_msg = wa_msg ~ "We'd love to help you find the perfect food
+                                                truck! How can we assist you?" %}
+                                                <a class="wa-btn"
+                                                    href="https://wa.me/{{ business.whatsapp }}?text={{ wa_msg | urlencode }}"
+                                                    target="_blank">
+                                                    <i class="bi bi-whatsapp"></i> Reply
+                                                </a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="empty-state"><i class="bi bi-inbox"></i>
+                                <p>No leads yet</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══ SOURCE & CONDITION ROW ══ -->
+            <div class="row g-4">
+                <!-- Traffic Sources -->
+                <div class="col-lg-6">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-diagram-3"></i> Traffic Sources</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="sourcesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Condition Breakdown -->
+                <div class="col-lg-6">
+                    <div class="admin-card">
+                        <div class="admin-card-header">
+                            <h6><i class="bi bi-speedometer2"></i> Inventory Condition</h6>
+                        </div>
+                        <div class="admin-card-body">
+                            <div class="chart-container" style="height:260px;">
+                                <canvas id="conditionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // Chart defaults
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.font.size = 12;
+
+        // ── Traffic Chart ──
+        var trafficCtx = document.getElementById('trafficChart');
+        if (trafficCtx) {
+            var rawDaily = {{ analytics.daily_views | default([]) | tojson }};
+            var dailyData = Array.isArray(rawDaily) ? rawDaily : [];
+            var labels = dailyData.map(function (d) { return d.date; });
+            var views = dailyData.map(function (d) { return d.views; });
+            new Chart(trafficCtx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Page Views',
+                        data: views.length ? views : [12, 19, 8, 15, 22, 30, 18],
+                        borderColor: '#ff6b00',
+                        backgroundColor: 'rgba(255,107,0,0.08)',
+                        tension: 0.4, fill: true, pointRadius: 4, borderWidth: 2.5,
+                        pointBackgroundColor: '#ff6b00'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: '#f0f0f0' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // ── Device Chart ──
+        var deviceCtx = document.getElementById('deviceChart');
+        if (deviceCtx) {
+            var deviceData = {{ analytics.device_breakdown | default ({}) | tojson
+        }};
+        var dLabels = Object.keys(deviceData).length ? Object.keys(deviceData) : ['Desktop', 'Mobile', 'Tablet'];
+        var dValues = Object.values(deviceData).length ? Object.values(deviceData) : [45, 40, 15];
+        new Chart(deviceCtx, {
+            type: 'doughnut',
+            data: {
+                labels: dLabels,
+                datasets: [{ data: dValues, backgroundColor: ['#ff6b00', '#1a1a2e', '#198754', '#0d6efd'], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle' } } },
+                cutout: '68%'
+            }
+        });
+        }
+
+        // ── Leads Funnel ──
+        var funnelCtx = document.getElementById('funnelChart');
+        if (funnelCtx) {
+            var leads = {{ recent_leads | tojson
+        }};
+        var statusCounts = { new: 0, contacted: 0, converted: 0 };
+        leads.forEach(function (l) { var s = l.status || 'new'; if (statusCounts[s] !== undefined) statusCounts[s]++; });
+        new Chart(funnelCtx, {
+            type: 'bar',
+            data: {
+                labels: ['New', 'Contacted', 'Converted'],
+                datasets: [{
+                    data: [statusCounts.new, statusCounts.contacted, statusCounts.converted],
+                    backgroundColor: ['#ffc107', '#0d6efd', '#198754'],
+                    borderRadius: 8, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } }
+            }
+        });
+        }
+
+        // ── Category Breakdown ──
+        var categoryCtx = document.getElementById('categoryChart');
+        if (categoryCtx) {
+            var trucks = {{ all_trucks | tojson
+        }};
+        var catCounts = {};
+        trucks.forEach(function (t) { var c = t.category || 'other'; catCounts[c] = (catCounts[c] || 0) + 1; });
+        new Chart(categoryCtx, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(catCounts).map(function (k) { return k.charAt(0).toUpperCase() + k.slice(1); }),
+                datasets: [{ data: Object.values(catCounts), backgroundColor: ['#ff6b00', '#1a1a2e', '#0d6efd', '#198754'], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { padding: 14, usePointStyle: true, pointStyle: 'circle' } } },
+                cutout: '60%'
+            }
+        });
+        }
+
+        // ── Traffic Sources ──
+        var sourcesCtx = document.getElementById('sourcesChart');
+        if (sourcesCtx) {
+            var sourceData = {{ analytics.sources | default ({}) | tojson
+        }};
+        var sLabels = Object.keys(sourceData).length ? Object.keys(sourceData) : ['Direct', 'Google', 'Social', 'Referral'];
+        var sValues = Object.values(sourceData).length ? Object.values(sourceData) : [40, 30, 20, 10];
+        new Chart(sourcesCtx, {
+            type: 'bar',
+            data: {
+                labels: sLabels.map(function (s) { return s.charAt(0).toUpperCase() + s.slice(1); }),
+                datasets: [{
+                    label: 'Visits',
+                    data: sValues,
+                    backgroundColor: ['#ff6b00', '#0d6efd', '#e91e63', '#198754'],
+                    borderRadius: 8, borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: { x: { beginAtZero: true, grid: { color: '#f0f0f0' } }, y: { grid: { display: false } } }
+            }
+        });
+        }
+
+        // ── Condition Breakdown ──
+        var conditionCtx = document.getElementById('conditionChart');
+        if (conditionCtx) {
+            var condCounts = {};
+            trucks.forEach(function (t) { var c = t.condition || 'other'; condCounts[c] = (condCounts[c] || 0) + 1; });
+            var usageCounts = {};
+            trucks.forEach(function (t) { var u = t.usage || 'sale'; usageCounts[u] = (usageCounts[u] || 0) + 1; });
+            new Chart(conditionCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['New', 'Used', 'Custom', 'For Sale', 'For Rent'],
+                    datasets: [{
+                        label: 'Count',
+                        data: [condCounts.new || 0, condCounts.used || 0, condCounts.custom || 0, usageCounts.sale || 0, usageCounts.rent || 0],
+                        backgroundColor: ['#198754', '#ffc107', '#ff6b00', '#0d6efd', '#6f42c1'],
+                        borderRadius: 8, borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: '#f0f0f0' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

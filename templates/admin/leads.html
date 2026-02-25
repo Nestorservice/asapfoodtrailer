@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leads — ASAP Admin</title>
+    <link rel="shortcut icon" href="/assets/img/logo/favicon.svg" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <style>
+        .lead-vehicle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lead-vehicle img {
+            width: 50px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .lead-vehicle .no-img {
+            width: 50px;
+            height: 38px;
+            border-radius: 8px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .lead-vehicle-info {
+            font-size: .8rem;
+            line-height: 1.3;
+        }
+
+        .lead-vehicle-info strong {
+            display: block;
+            font-size: .82rem;
+        }
+
+        .lead-vehicle-info span {
+            color: #ff6b00;
+            font-weight: 600;
+        }
+
+        .wa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: #25d366;
+            color: #fff !important;
+            font-size: .8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .3s;
+            border: none;
+        }
+
+        .wa-btn:hover {
+            background: #1da851;
+            transform: translateY(-1px);
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .email-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: #0d6efd;
+            color: #fff !important;
+            font-size: .8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .3s;
+        }
+
+        .email-btn:hover {
+            background: #0a58ca;
+            transform: translateY(-1px);
+        }
+
+        .call-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 14px;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: #fff !important;
+            font-size: .8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all .3s;
+        }
+
+        .call-btn:hover {
+            background: #0f0f20;
+            transform: translateY(-1px);
+        }
+
+        .lead-detail {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-top: 8px;
+        }
+
+        .lead-message {
+            font-size: .85rem;
+            color: #555;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .status-select {
+            font-size: .78rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .lead-card {
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: box-shadow .3s;
+        }
+
+        .lead-card:hover {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        }
+
+        .lead-stats-row {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .lead-stat-mini {
+            flex: 1;
+            min-width: 120px;
+            background: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+        }
+
+        .lead-stat-mini h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.6rem;
+            margin: 0;
+        }
+
+        .lead-stat-mini small {
+            font-size: .78rem;
+            color: #999;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .filter-tab {
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: .82rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #eee;
+            background: #fff;
+            color: #555;
+            transition: all .3s;
+        }
+
+        .filter-tab.active,
+        .filter-tab:hover {
+            background: #ff6b00;
+            color: #fff;
+            border-color: #ff6b00;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <img src="/assets/img/logo/white-logo.png" alt="ASAP" class="sidebar-logo">
+            <button class="sidebar-close d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <a href="/admin/inventory" class="nav-item"><i class="bi bi-truck"></i> Inventory</a>
+            <a href="/admin/leads" class="nav-item active"><i class="bi bi-person-lines-fill"></i> Leads</a>
+            <div class="nav-divider"></div>
+            <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
+            <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="topbar-toggle d-lg-none" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                <h5 class="mb-0" style="font-family:'Outfit',sans-serif;font-weight:800;">Leads</h5>
+            </div>
+            <div class="topbar-right">
+                <span class="badge" style="background:#ff6b00;font-size:.85rem;padding:8px 16px;border-radius:8px;">{{
+                    leads|length }} total</span>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <!-- Stats Row -->
+            {% set new_leads = leads | selectattr('status', 'equalto', 'new') | list %}
+            {% set contacted_leads = leads | selectattr('status', 'equalto', 'contacted') | list %}
+            {% set converted_leads = leads | selectattr('status', 'equalto', 'converted') | list %}
+            <div class="lead-stats-row">
+                <div class="lead-stat-mini">
+                    <h4 style="color:#ff6b00;">{{ leads|length }}</h4>
+                    <small>Total Leads</small>
+                </div>
+                <div class="lead-stat-mini">
+                    <h4 style="color:#ffc107;">{{ new_leads|length }}</h4>
+                    <small>New</small>
+                </div>
+                <div class="lead-stat-mini">
+                    <h4 style="color:#0d6efd;">{{ contacted_leads|length }}</h4>
+                    <small>Contacted</small>
+                </div>
+                <div class="lead-stat-mini">
+                    <h4 style="color:#198754;">{{ converted_leads|length }}</h4>
+                    <small>Converted</small>
+                </div>
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <div class="filter-tab active" data-filter="all">All ({{ leads|length }})</div>
+                <div class="filter-tab" data-filter="new">🔔 New ({{ new_leads|length }})</div>
+                <div class="filter-tab" data-filter="contacted">📞 Contacted ({{ contacted_leads|length }})</div>
+                <div class="filter-tab" data-filter="converted">✅ Converted ({{ converted_leads|length }})</div>
+            </div>
+
+            {% if leads and leads|length > 0 %}
+            <!-- Lead Cards -->
+            {% for lead in leads %}
+            {% set truck = trucks_by_id.get(lead.truck_id, none) if lead.truck_id else none %}
+            <div class="lead-card" data-status="{{ lead.status | default('new') }}">
+                <div class="row align-items-center">
+                    <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
+                        <div>
+                            <strong style="font-size:1rem;">{{ lead.customer_name }}</strong>
+                            <div style="font-size:.8rem;color:#777;">
+                                <i class="bi bi-envelope"></i> {{ lead.email }}
+                            </div>
+                            {% if lead.phone %}
+                            <div style="font-size:.8rem;color:#777;">
+                                <i class="bi bi-telephone"></i> {{ lead.phone }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 mb-2 mb-lg-0">
+                        {% if truck %}
+                        <div class="lead-vehicle">
+                            {% if truck.images and truck.images|length > 0 %}
+                            <img src="{{ truck.images[0] }}" alt="{{ truck.title }}">
+                            {% else %}
+                            <div class="no-img"><i class="bi bi-truck" style="color:#ccc;font-size:1.2rem;"></i></div>
+                            {% endif %}
+                            <div class="lead-vehicle-info">
+                                <strong>{{ truck.title[:28] }}</strong>
+                                <span>${{ "{:,.0f}".format(truck.price) }}</span>
+                            </div>
+                        </div>
+                        {% else %}
+                        <span style="color:#aaa;font-size:.85rem;"><i class="bi bi-chat-dots"></i> {{ lead.interest |
+                            default('General') | capitalize }} inquiry</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-lg-2 col-md-4 mb-2 mb-lg-0">
+                        <div style="font-size:.78rem;color:#999;">
+                            <i class="bi bi-calendar3"></i> {{ lead.created_at[:10] if lead.created_at else
+                            (lead.date[:10] if lead.date else '—') }}
+                        </div>
+                        <span
+                            class="badge mt-1 {{ 'bg-warning text-dark' if lead.status=='new' else 'bg-info' if lead.status=='contacted' else 'bg-success' if lead.status=='converted' else 'bg-secondary' }}">
+                            {{ lead.status | default('new') | capitalize }}
+                        </span>
+                    </div>
+                    <div class="col-lg-4 col-md-8">
+                        <div class="action-btns">
+                            {% set wa_msg = "Hello " ~ lead.customer_name ~ "! 👋 Thank you for contacting ASAP Food
+                            Trailer" %}
+                            {% if truck %}
+                            {% set wa_msg = wa_msg ~ " about our *" ~ truck.title ~ "* priced at $" ~
+                            "{:,.0f}".format(truck.price) ~ ". " %}
+                            {% if truck.images and truck.images|length > 0 %}
+                            {% set wa_msg = wa_msg ~ "📸 See it here: " ~ truck.images[0] ~ " " %}
+                            {% endif %}
+                            {% else %}
+                            {% set wa_msg = wa_msg ~ ". " %}
+                            {% endif %}
+                            {% set wa_msg = wa_msg ~ "We'd love to help you find the perfect food truck! How can we
+                            assist you today?" %}
+
+                            <a class="wa-btn" href="https://wa.me/{{ business.whatsapp }}?text={{ wa_msg | urlencode }}"
+                                target="_blank">
+                                <i class="bi bi-whatsapp"></i> WhatsApp
+                            </a>
+                            <a class="email-btn"
+                                href="mailto:{{ lead.email }}?subject=Re: Your ASAP Food Trailer Inquiry{% if truck %} - {{ truck.title }}{% endif %}"
+                                target="_blank">
+                                <i class="bi bi-envelope"></i> Email
+                            </a>
+                            {% if lead.phone %}
+                            <a class="call-btn" href="tel:{{ lead.phone }}">
+                                <i class="bi bi-telephone"></i> Call
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% if lead.message %}
+                <div class="lead-detail mt-3">
+                    <div
+                        style="font-size:.75rem;font-weight:600;color:#999;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">
+                        Message</div>
+                    <div class="lead-message">{{ lead.message }}</div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="admin-card">
+                <div class="admin-card-body">
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <p>No leads yet</p>
+                        <span style="color:#aaa;font-size:.85rem;">Leads will appear here when visitors submit contact
+                            forms or request quotes.</span>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </main>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('adminSidebar').classList.toggle('open');
+            document.getElementById('sidebarOverlay').classList.toggle('show');
+        }
+
+        // Filter tabs
+        document.querySelectorAll('.filter-tab').forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                document.querySelectorAll('.filter-tab').forEach(function (t) { t.classList.remove('active'); });
+                this.classList.add('active');
+                var filter = this.getAttribute('data-filter');
+                document.querySelectorAll('.lead-card').forEach(function (card) {
+                    if (filter === 'all' || card.getAttribute('data-status') === filter) {
+                        card.style.display = '';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

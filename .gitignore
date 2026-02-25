@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual env
+venv/
+.venv/
+env/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Firebase service account keys (SENSITIVE!)
+*-firebase-adminsdk-*.json
+
+# Uploads
+uploads/
+
+# Migration script (not needed in prod)
+migrate_to_firebase.py
+
+# Local data (using Firebase in prod)
+# data/seed.json - keep for backup
+
+# Gemini / Agent
+.gemini/
+.agent/
