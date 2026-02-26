@@ -5,6 +5,7 @@ services:
     buildCommand: pip install --no-cache-dir -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT --workers 1 --limit-concurrency 20 --timeout-keep-alive 5
     plan: free
+    healthCheckPath: /health
     envVars:
       - key: APP_MODE
         value: firebase
@@ -17,4 +18,10 @@ services:
       - key: FIREBASE_STORAGE_BUCKET
         sync: false
       - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: SMTP_EMAIL
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: NOTIFY_EMAIL
         sync: false

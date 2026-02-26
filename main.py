@@ -26,6 +26,7 @@ from services.seo import seo_service
 from services.analytics import analytics_service
 from services.auth import auth_service
 from services.image_processor import image_processor
+from services.email_service import email_service
 
 # ─── App Init ─────────────────────────────────────────────────
 app = FastAPI(
@@ -46,6 +47,12 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 
 # Templates
 templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
+
+
+# ─── Health check (keeps Render awake, helps Safari) ──────────
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
 
 
 # ─── Template Helpers ─────────────────────────────────────────
@@ -457,15 +464,21 @@ async def api_create_lead(
     message: str = Form(""),
 ):
     """API: Create a new lead from quote request or contact form."""
-    lead = db.create_lead(
-        {
-            "customer_name": customer_name,
-            "email": email,
-            "phone": phone,
-            "truck_id": truck_id,
-            "message": message,
-        }
-    )
+    lead_data = {
+        "customer_name": customer_name,
+        "email": email,
+        "phone": phone,
+        "truck_id": truck_id,
+        "message": message,
+    }
+    lead = db.create_lead(lead_data)
+
+    # Send email notification (non-blocking — won't fail the request)
+    try:
+        email_service.send_lead_notification(lead_data)
+    except Exception as e:
+        print(f"Email notification failed (non-critical): {e}")
+
     return {"success": True, "lead": lead}
 
 
