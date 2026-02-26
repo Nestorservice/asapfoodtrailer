@@ -4,6 +4,7 @@ ASAP Food Trailer — Main FastAPI Application
 
 import json
 import os
+import asyncio
 from fastapi import (
     FastAPI,
     Request,
@@ -49,10 +50,41 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
 
 
-# ─── Health check (keeps Render awake, helps Safari) ──────────
+# ─── Health check + diagnostics ───────────────────────────────
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
+
+
+@app.get("/api/diagnostics/storage")
+async def diagnostics_storage():
+    """Test Firebase Storage connectivity. Visit this after deploy to verify images will persist."""
+    result = image_processor.test_firebase_storage()
+    return result
+
+
+# ─── Keep-alive (prevents Render free tier sleep → fixes Safari) ─
+async def _keep_alive():
+    """Ping self every 10 minutes to prevent Render from sleeping."""
+    import urllib.request
+
+    render_url = os.getenv("RENDER_EXTERNAL_URL", "")
+    if not render_url:
+        print("[KeepAlive] RENDER_EXTERNAL_URL not set, skipping keep-alive")
+        return
+    health_url = f"{render_url}/health"
+    print(f"[KeepAlive] Starting self-ping every 10 min: {health_url}")
+    while True:
+        await asyncio.sleep(600)  # 10 minutes
+        try:
+            urllib.request.urlopen(health_url, timeout=10)
+        except Exception:
+            pass
+
+
+@app.on_event("startup")
+async def startup_event():
+    asyncio.create_task(_keep_alive())
 
 
 # ─── Template Helpers ─────────────────────────────────────────

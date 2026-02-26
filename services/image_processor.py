@@ -1,11 +1,12 @@
 """
 ASAP Food Trailer - Image Processing Service
 Handles image resizing, WebP conversion, and compression.
-Supports local storage and Firebase Storage for permanent hosting.
+Uses Firebase Storage for permanent cloud hosting.
 """
 
 import os
 import uuid
+import traceback
 from io import BytesIO
 from typing import List, Tuple
 
@@ -38,40 +39,40 @@ class ImageProcessor:
             settings.FIREBASE_STORAGE_BUCKET
         )
         self._bucket = None
+        self._bucket_tried = False
+        if self.use_firebase:
+            print(
+                f"[ImageProcessor] Firebase mode ON, bucket: {settings.FIREBASE_STORAGE_BUCKET}"
+            )
+        else:
+            print(
+                f"[ImageProcessor] Local mode (APP_MODE={settings.APP_MODE}, BUCKET={settings.FIREBASE_STORAGE_BUCKET})"
+            )
 
     def _get_bucket(self):
         """Lazy-load Firebase Storage bucket."""
         if self._bucket is not None:
             return self._bucket
-
-        if not self.use_firebase:
+        if self._bucket_tried or not self.use_firebase:
             return None
 
+        self._bucket_tried = True
         try:
             import firebase_admin
             from firebase_admin import storage
 
-            if not firebase_admin._apps:
-                from firebase_admin import credentials
-
-                sa_json = os.getenv("FIREBASE_SERVICE_ACCOUNT_JSON", "")
-                if sa_json:
-                    import json
-
-                    cred = credentials.Certificate(json.loads(sa_json))
-                else:
-                    cred = credentials.Certificate(
-                        settings.FIREBASE_SERVICE_ACCOUNT_PATH
-                    )
-                firebase_admin.initialize_app(
-                    cred, {"storageBucket": settings.FIREBASE_STORAGE_BUCKET}
-                )
-
-            self._bucket = storage.bucket(settings.FIREBASE_STORAGE_BUCKET)
-            print(f"Firebase Storage bucket ready: {settings.FIREBASE_STORAGE_BUCKET}")
+            # Firebase should already be initialized by database.py
+            # Just get the default bucket
+            if firebase_admin._apps:
+                self._bucket = storage.bucket()
+                print(f"[ImageProcessor] Got bucket: {self._bucket.name}")
+            else:
+                print("[ImageProcessor] ERROR: Firebase not initialized yet!")
+                self.use_firebase = False
             return self._bucket
         except Exception as e:
-            print(f"WARNING: Firebase Storage init failed: {e}")
+            print(f"[ImageProcessor] Firebase Storage init FAILED: {e}")
+            traceback.print_exc()
             self.use_firebase = False
             return None
 
@@ -81,22 +82,54 @@ class ImageProcessor:
         """Upload file to Firebase Storage and return a permanent download URL."""
         bucket = self._get_bucket()
         if not bucket:
+            print(f"[ImageProcessor] No bucket available, cannot upload {remote_path}")
             return ""
 
         try:
             blob = bucket.blob(remote_path)
-            # Generate a download token for permanent public access
+            # Set download token for permanent public access
             token = uuid.uuid4().hex
             blob.metadata = {"firebaseStorageDownloadTokens": token}
             blob.upload_from_string(file_data, content_type=content_type)
-            # Build the Firebase Storage download URL with token
-            bucket_name = settings.FIREBASE_STORAGE_BUCKET
+
+            # Build permanent download URL
             encoded_path = remote_path.replace("/", "%2F")
-            url = f"https://firebasestorage.googleapis.com/v0/b/{bucket_name}/o/{encoded_path}?alt=media&token={token}"
+            url = (
+                f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}"
+                f"/o/{encoded_path}?alt=media&token={token}"
+            )
+            print(f"[ImageProcessor] Uploaded: {remote_path} -> {url[:80]}...")
             return url
         except Exception as e:
-            print(f"Firebase upload error for {remote_path}: {e}")
+            print(f"[ImageProcessor] Upload FAILED for {remote_path}: {e}")
+            traceback.print_exc()
             return ""
+
+    def test_firebase_storage(self) -> dict:
+        """Test Firebase Storage connectivity. Returns diagnostic info."""
+        result = {
+            "app_mode": settings.APP_MODE,
+            "bucket_configured": settings.FIREBASE_STORAGE_BUCKET,
+            "use_firebase": self.use_firebase,
+            "bucket_ready": False,
+            "upload_test": False,
+            "error": None,
+        }
+        try:
+            bucket = self._get_bucket()
+            if bucket:
+                result["bucket_ready"] = True
+                result["bucket_name"] = bucket.name
+                # Try a small test upload
+                test_blob = bucket.blob("_test_connection.txt")
+                test_blob.upload_from_string(b"ok", content_type="text/plain")
+                test_blob.delete()
+                result["upload_test"] = True
+            else:
+                result["error"] = "Could not initialize bucket"
+        except Exception as e:
+            result["error"] = str(e)
+        return result
 
     def validate_image(self, filename: str, file_size: int) -> Tuple[bool, str]:
         """Validate image file."""
@@ -114,78 +147,74 @@ class ImageProcessor:
         if not PIL_AVAILABLE:
             ext = os.path.splitext(filename)[1]
             saved_name = f"{base_name}{ext}"
-            content_type = (
+            ct = (
                 "image/jpeg" if ext in (".jpg", ".jpeg") else f"image/{ext.lstrip('.')}"
             )
 
             if self.use_firebase:
-                url = self._upload_to_firebase(
-                    image_data, f"uploads/{saved_name}", content_type
-                )
+                url = self._upload_to_firebase(image_data, f"uploads/{saved_name}", ct)
                 if url:
                     return {"original": url, "thumb": url, "medium": url, "large": url}
 
-            # Fallback: save locally
-            saved_path = os.path.join(self.upload_dir, saved_name)
-            with open(saved_path, "wb") as f:
+            # Local fallback
+            path = os.path.join(self.upload_dir, saved_name)
+            with open(path, "wb") as f:
                 f.write(image_data)
-            return {
-                "original": f"/uploads/{saved_name}",
-                "thumb": f"/uploads/{saved_name}",
-                "medium": f"/uploads/{saved_name}",
-                "large": f"/uploads/{saved_name}",
-            }
+            local = f"/uploads/{saved_name}"
+            return {"original": local, "thumb": local, "medium": local, "large": local}
 
         img = Image.open(BytesIO(image_data))
-
-        # Convert to RGB for WebP
         if img.mode in ("RGBA", "LA", "P"):
-            background = Image.new("RGB", img.size, (255, 255, 255))
+            bg = Image.new("RGB", img.size, (255, 255, 255))
             if img.mode == "P":
                 img = img.convert("RGBA")
-            background.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
-            img = background
+            bg.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
+            img = bg
 
         result = {}
+        upload_failed = False
 
-        for size_name, dimensions in self.SIZES.items():
+        for size_name, dims in self.SIZES.items():
             resized = img.copy()
-            resized.thumbnail(dimensions, Image.LANCZOS)
+            resized.thumbnail(dims, Image.LANCZOS)
+            fname = f"{base_name}_{size_name}.webp"
+            buf = BytesIO()
+            resized.save(buf, "WebP", quality=82, method=4)
+            data = buf.getvalue()
 
-            file_name = f"{base_name}_{size_name}.webp"
-            buffer = BytesIO()
-            resized.save(buffer, "WebP", quality=82, method=4)
-            webp_data = buffer.getvalue()
-
-            if self.use_firebase:
-                url = self._upload_to_firebase(webp_data, f"uploads/{file_name}")
+            if self.use_firebase and not upload_failed:
+                url = self._upload_to_firebase(data, f"uploads/{fname}")
                 if url:
                     result[size_name] = url
                     continue
+                else:
+                    upload_failed = True
+                    print(
+                        f"[ImageProcessor] Firebase failed, switching to local for remaining"
+                    )
 
-            # Fallback: save locally
-            file_path = os.path.join(self.upload_dir, file_name)
-            with open(file_path, "wb") as f:
-                f.write(webp_data)
-            result[size_name] = f"/uploads/{file_name}"
+            # Local fallback
+            fpath = os.path.join(self.upload_dir, fname)
+            with open(fpath, "wb") as f:
+                f.write(data)
+            result[size_name] = f"/uploads/{fname}"
 
-        # Save original as WebP
-        original_name = f"{base_name}_original.webp"
-        buffer = BytesIO()
-        img.save(buffer, "WebP", quality=90, method=4)
-        original_data = buffer.getvalue()
+        # Original
+        orig_name = f"{base_name}_original.webp"
+        buf = BytesIO()
+        img.save(buf, "WebP", quality=90, method=4)
+        orig_data = buf.getvalue()
 
-        if self.use_firebase:
-            url = self._upload_to_firebase(original_data, f"uploads/{original_name}")
+        if self.use_firebase and not upload_failed:
+            url = self._upload_to_firebase(orig_data, f"uploads/{orig_name}")
             if url:
                 result["original"] = url
                 return result
 
-        # Local fallback
-        original_path = os.path.join(self.upload_dir, original_name)
-        with open(original_path, "wb") as f:
-            f.write(original_data)
-        result["original"] = f"/uploads/{original_name}"
+        fpath = os.path.join(self.upload_dir, orig_name)
+        with open(fpath, "wb") as f:
+            f.write(orig_data)
+        result["original"] = f"/uploads/{orig_name}"
         return result
 
     async def process_upload(self, file) -> dict:
