@@ -58,9 +58,8 @@ async def health_check():
 
 @app.get("/api/diagnostics/storage")
 async def diagnostics_storage():
-    """Test Firebase Storage connectivity. Visit this after deploy to verify images will persist."""
-    result = image_processor.test_firebase_storage()
-    return result
+    """Test cloud storage connectivity."""
+    return image_processor.test_storage()
 
 
 # ─── Keep-alive (prevents Render free tier sleep → fixes Safari) ─

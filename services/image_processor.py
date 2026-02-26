@@ -1,7 +1,7 @@
 """
 ASAP Food Trailer - Image Processing Service
 Handles image resizing, WebP conversion, and compression.
-Uses Firebase Storage for permanent cloud hosting.
+Uses Cloudinary for permanent cloud image hosting (free tier: 25GB).
 """
 
 import os
@@ -20,6 +20,27 @@ except ImportError:
     PIL_AVAILABLE = False
     print("WARNING: Pillow not installed. Image processing disabled.")
 
+# Cloudinary setup
+CLOUDINARY_AVAILABLE = False
+try:
+    import cloudinary
+    import cloudinary.uploader
+
+    cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    api_key = os.getenv("CLOUDINARY_API_KEY", "")
+    api_secret = os.getenv("CLOUDINARY_API_SECRET", "")
+
+    if cloud_name and api_key and api_secret:
+        cloudinary.config(
+            cloud_name=cloud_name, api_key=api_key, api_secret=api_secret, secure=True
+        )
+        CLOUDINARY_AVAILABLE = True
+        print(f"[ImageProcessor] Cloudinary ready (cloud: {cloud_name})")
+    else:
+        print("[ImageProcessor] Cloudinary not configured (missing env vars)")
+except ImportError:
+    print("[ImageProcessor] cloudinary package not installed")
+
 
 class ImageProcessor:
     """Handles image processing: resize, convert to WebP, compress."""
@@ -35,98 +56,58 @@ class ImageProcessor:
     def __init__(self):
         self.upload_dir = settings.UPLOAD_DIR
         os.makedirs(self.upload_dir, exist_ok=True)
-        self.use_firebase = settings.APP_MODE == "firebase" and bool(
-            settings.FIREBASE_STORAGE_BUCKET
-        )
-        self._bucket = None
-        self._bucket_tried = False
-        if self.use_firebase:
-            print(
-                f"[ImageProcessor] Firebase mode ON, bucket: {settings.FIREBASE_STORAGE_BUCKET}"
-            )
-        else:
-            print(
-                f"[ImageProcessor] Local mode (APP_MODE={settings.APP_MODE}, BUCKET={settings.FIREBASE_STORAGE_BUCKET})"
-            )
+        self.use_cloud = CLOUDINARY_AVAILABLE
 
-    def _get_bucket(self):
-        """Lazy-load Firebase Storage bucket."""
-        if self._bucket is not None:
-            return self._bucket
-        if self._bucket_tried or not self.use_firebase:
-            return None
-
-        self._bucket_tried = True
-        try:
-            import firebase_admin
-            from firebase_admin import storage
-
-            # Firebase should already be initialized by database.py
-            # Just get the default bucket
-            if firebase_admin._apps:
-                self._bucket = storage.bucket()
-                print(f"[ImageProcessor] Got bucket: {self._bucket.name}")
-            else:
-                print("[ImageProcessor] ERROR: Firebase not initialized yet!")
-                self.use_firebase = False
-            return self._bucket
-        except Exception as e:
-            print(f"[ImageProcessor] Firebase Storage init FAILED: {e}")
-            traceback.print_exc()
-            self.use_firebase = False
-            return None
-
-    def _upload_to_firebase(
-        self, file_data: bytes, remote_path: str, content_type: str = "image/webp"
+    def _upload_to_cloudinary(
+        self, image_data: bytes, folder: str = "asap_uploads"
     ) -> str:
-        """Upload file to Firebase Storage and return a permanent download URL."""
-        bucket = self._get_bucket()
-        if not bucket:
-            print(f"[ImageProcessor] No bucket available, cannot upload {remote_path}")
+        """Upload image to Cloudinary and return permanent URL."""
+        if not self.use_cloud:
             return ""
-
         try:
-            blob = bucket.blob(remote_path)
-            # Set download token for permanent public access
-            token = uuid.uuid4().hex
-            blob.metadata = {"firebaseStorageDownloadTokens": token}
-            blob.upload_from_string(file_data, content_type=content_type)
-
-            # Build permanent download URL
-            encoded_path = remote_path.replace("/", "%2F")
-            url = (
-                f"https://firebasestorage.googleapis.com/v0/b/{bucket.name}"
-                f"/o/{encoded_path}?alt=media&token={token}"
+            result = cloudinary.uploader.upload(
+                image_data,
+                folder=folder,
+                resource_type="image",
+                quality="auto:good",
+                fetch_format="auto",
             )
-            print(f"[ImageProcessor] Uploaded: {remote_path} -> {url[:80]}...")
+            url = result.get("secure_url", "")
+            print(f"[ImageProcessor] Cloudinary upload OK: {url[:80]}...")
             return url
         except Exception as e:
-            print(f"[ImageProcessor] Upload FAILED for {remote_path}: {e}")
+            print(f"[ImageProcessor] Cloudinary upload FAILED: {e}")
             traceback.print_exc()
             return ""
 
-    def test_firebase_storage(self) -> dict:
-        """Test Firebase Storage connectivity. Returns diagnostic info."""
+    def test_storage(self) -> dict:
+        """Test cloud storage connectivity."""
         result = {
-            "app_mode": settings.APP_MODE,
-            "bucket_configured": settings.FIREBASE_STORAGE_BUCKET,
-            "use_firebase": self.use_firebase,
-            "bucket_ready": False,
+            "provider": "cloudinary" if self.use_cloud else "local",
+            "cloud_configured": CLOUDINARY_AVAILABLE,
             "upload_test": False,
             "error": None,
         }
+        if not CLOUDINARY_AVAILABLE:
+            result["error"] = (
+                "Cloudinary not configured. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"
+            )
+            return result
+
         try:
-            bucket = self._get_bucket()
-            if bucket:
-                result["bucket_ready"] = True
-                result["bucket_name"] = bucket.name
-                # Try a small test upload
-                test_blob = bucket.blob("_test_connection.txt")
-                test_blob.upload_from_string(b"ok", content_type="text/plain")
-                test_blob.delete()
-                result["upload_test"] = True
-            else:
-                result["error"] = "Could not initialize bucket"
+            # Upload a tiny test image
+            import cloudinary.uploader
+
+            test_result = cloudinary.uploader.upload(
+                b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x02\x00\x00\x00\x90wS\xde\x00\x00\x00\x0cIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82",
+                folder="asap_test",
+                resource_type="image",
+            )
+            # Clean up test
+            if test_result.get("public_id"):
+                cloudinary.uploader.destroy(test_result["public_id"])
+            result["upload_test"] = True
+            result["cloud_name"] = os.getenv("CLOUDINARY_CLOUD_NAME", "")
         except Exception as e:
             result["error"] = str(e)
         return result
@@ -141,81 +122,88 @@ class ImageProcessor:
         return True, "OK"
 
     def process_image(self, image_data: bytes, filename: str) -> dict:
-        """Process an uploaded image: resize, convert to WebP, store permanently."""
+        """Process an uploaded image and store permanently."""
         base_name = str(uuid.uuid4())
 
-        if not PIL_AVAILABLE:
-            ext = os.path.splitext(filename)[1]
-            saved_name = f"{base_name}{ext}"
-            ct = (
-                "image/jpeg" if ext in (".jpg", ".jpeg") else f"image/{ext.lstrip('.')}"
-            )
+        # ── Cloud upload (Cloudinary) ─────────────────────────
+        if self.use_cloud:
+            if PIL_AVAILABLE:
+                try:
+                    img = Image.open(BytesIO(image_data))
+                    if img.mode in ("RGBA", "LA", "P"):
+                        bg = Image.new("RGB", img.size, (255, 255, 255))
+                        if img.mode == "P":
+                            img = img.convert("RGBA")
+                        bg.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
+                        img = bg
 
-            if self.use_firebase:
-                url = self._upload_to_firebase(image_data, f"uploads/{saved_name}", ct)
+                    result = {}
+                    for size_name, dims in self.SIZES.items():
+                        resized = img.copy()
+                        resized.thumbnail(dims, Image.LANCZOS)
+                        buf = BytesIO()
+                        resized.save(buf, "WebP", quality=82, method=4)
+                        url = self._upload_to_cloudinary(buf.getvalue(), "asap_uploads")
+                        if url:
+                            result[size_name] = url
+                        else:
+                            break  # Cloud failed, fall through to local
+
+                    if len(result) == len(self.SIZES):
+                        # Upload original too
+                        buf = BytesIO()
+                        img.save(buf, "WebP", quality=90, method=4)
+                        orig_url = self._upload_to_cloudinary(
+                            buf.getvalue(), "asap_uploads"
+                        )
+                        if orig_url:
+                            result["original"] = orig_url
+                            return result
+                except Exception as e:
+                    print(f"[ImageProcessor] PIL processing error: {e}")
+
+            else:
+                # No PIL, upload raw
+                url = self._upload_to_cloudinary(image_data, "asap_uploads")
                 if url:
                     return {"original": url, "thumb": url, "medium": url, "large": url}
 
-            # Local fallback
-            path = os.path.join(self.upload_dir, saved_name)
-            with open(path, "wb") as f:
-                f.write(image_data)
-            local = f"/uploads/{saved_name}"
-            return {"original": local, "thumb": local, "medium": local, "large": local}
+        # ── Local fallback ────────────────────────────────────
+        if PIL_AVAILABLE:
+            try:
+                img = Image.open(BytesIO(image_data))
+                if img.mode in ("RGBA", "LA", "P"):
+                    bg = Image.new("RGB", img.size, (255, 255, 255))
+                    if img.mode == "P":
+                        img = img.convert("RGBA")
+                    bg.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
+                    img = bg
 
-        img = Image.open(BytesIO(image_data))
-        if img.mode in ("RGBA", "LA", "P"):
-            bg = Image.new("RGB", img.size, (255, 255, 255))
-            if img.mode == "P":
-                img = img.convert("RGBA")
-            bg.paste(img, mask=img.split()[-1] if "A" in img.mode else None)
-            img = bg
+                result = {}
+                for size_name, dims in self.SIZES.items():
+                    resized = img.copy()
+                    resized.thumbnail(dims, Image.LANCZOS)
+                    fname = f"{base_name}_{size_name}.webp"
+                    fpath = os.path.join(self.upload_dir, fname)
+                    resized.save(fpath, "WebP", quality=82, method=4)
+                    result[size_name] = f"/uploads/{fname}"
 
-        result = {}
-        upload_failed = False
-
-        for size_name, dims in self.SIZES.items():
-            resized = img.copy()
-            resized.thumbnail(dims, Image.LANCZOS)
-            fname = f"{base_name}_{size_name}.webp"
-            buf = BytesIO()
-            resized.save(buf, "WebP", quality=82, method=4)
-            data = buf.getvalue()
-
-            if self.use_firebase and not upload_failed:
-                url = self._upload_to_firebase(data, f"uploads/{fname}")
-                if url:
-                    result[size_name] = url
-                    continue
-                else:
-                    upload_failed = True
-                    print(
-                        f"[ImageProcessor] Firebase failed, switching to local for remaining"
-                    )
-
-            # Local fallback
-            fpath = os.path.join(self.upload_dir, fname)
-            with open(fpath, "wb") as f:
-                f.write(data)
-            result[size_name] = f"/uploads/{fname}"
-
-        # Original
-        orig_name = f"{base_name}_original.webp"
-        buf = BytesIO()
-        img.save(buf, "WebP", quality=90, method=4)
-        orig_data = buf.getvalue()
-
-        if self.use_firebase and not upload_failed:
-            url = self._upload_to_firebase(orig_data, f"uploads/{orig_name}")
-            if url:
-                result["original"] = url
+                orig_name = f"{base_name}_original.webp"
+                orig_path = os.path.join(self.upload_dir, orig_name)
+                img.save(orig_path, "WebP", quality=90, method=4)
+                result["original"] = f"/uploads/{orig_name}"
                 return result
+            except Exception as e:
+                print(f"[ImageProcessor] Local PIL error: {e}")
 
-        fpath = os.path.join(self.upload_dir, orig_name)
-        with open(fpath, "wb") as f:
-            f.write(orig_data)
-        result["original"] = f"/uploads/{orig_name}"
-        return result
+        # Raw fallback
+        ext = os.path.splitext(filename)[1]
+        saved_name = f"{base_name}{ext}"
+        path = os.path.join(self.upload_dir, saved_name)
+        with open(path, "wb") as f:
+            f.write(image_data)
+        local = f"/uploads/{saved_name}"
+        return {"original": local, "thumb": local, "medium": local, "large": local}
 
     async def process_upload(self, file) -> dict:
         """Process a file upload from FastAPI UploadFile."""

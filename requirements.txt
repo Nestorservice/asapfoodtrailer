@@ -7,3 +7,4 @@ aiofiles==23.2.1
 Pillow>=10.2.0
 firebase-admin>=6.4.0
 pydantic==2.5.3
+cloudinary>=1.36.0
