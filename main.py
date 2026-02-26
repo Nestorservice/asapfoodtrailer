@@ -64,21 +64,32 @@ async def diagnostics_storage():
 
 # ─── Keep-alive (prevents Render free tier sleep → fixes Safari) ─
 async def _keep_alive():
-    """Ping self every 10 minutes to prevent Render from sleeping."""
+    """Ping self every 5 minutes to prevent Render from sleeping."""
     import urllib.request
 
+    # Auto-detect URL
     render_url = os.getenv("RENDER_EXTERNAL_URL", "")
     if not render_url:
-        print("[KeepAlive] RENDER_EXTERNAL_URL not set, skipping keep-alive")
+        service_name = os.getenv("RENDER_SERVICE_NAME", "")
+        if service_name:
+            render_url = f"https://{service_name}.onrender.com"
+
+    if not render_url:
+        print("[KeepAlive] No Render URL found. Set RENDER_EXTERNAL_URL env var.")
+        print("[KeepAlive] Example: https://asap-food-trailer.onrender.com")
         return
+
     health_url = f"{render_url}/health"
-    print(f"[KeepAlive] Starting self-ping every 10 min: {health_url}")
+    print(f"[KeepAlive] Active — pinging {health_url} every 5 min")
+
+    await asyncio.sleep(30)  # Wait 30s after startup before first ping
     while True:
-        await asyncio.sleep(600)  # 10 minutes
         try:
             urllib.request.urlopen(health_url, timeout=10)
-        except Exception:
-            pass
+            print("[KeepAlive] Ping OK")
+        except Exception as e:
+            print(f"[KeepAlive] Ping failed: {e}")
+        await asyncio.sleep(300)  # Every 5 minutes
 
 
 @app.on_event("startup")
