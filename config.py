@@ -33,10 +33,24 @@ class Settings:
     # Business Info
     BUSINESS_NAME = os.getenv("BUSINESS_NAME", "ASAP Food Trailer")
     BUSINESS_PHONE = os.getenv("BUSINESS_PHONE", "+12016453364")
-    BUSINESS_EMAIL = os.getenv("BUSINESS_EMAIL", "info@asapfoodtrailer.com")
+    BUSINESS_EMAIL = os.getenv(
+        "BUSINESS_EMAIL", "ffoodtruckandtrailerforsaleand@gmail.com"
+    )
     BUSINESS_ADDRESS = os.getenv("BUSINESS_ADDRESS", "Houston, TX")
     BUSINESS_CITY = os.getenv("BUSINESS_CITY", "Houston")
     BUSINESS_WHATSAPP = os.getenv("BUSINESS_WHATSAPP", "12104607427")
+
+    # Social Media
+    SOCIAL_TIKTOK = os.getenv(
+        "SOCIAL_TIKTOK", "https://www.tiktok.com/@food.truck.and.tr"
+    )
+    SOCIAL_FACEBOOK = os.getenv(
+        "SOCIAL_FACEBOOK", "https://www.facebook.com/share/1AhBtVhbus/?mibextid=wwXIfr"
+    )
+    SOCIAL_INSTAGRAM = os.getenv(
+        "SOCIAL_INSTAGRAM",
+        "https://www.instagram.com/asap_trailers?igsh=MTB5ZjNiajFqNGtm&utm_source=qr",
+    )
 
     # Paths
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))

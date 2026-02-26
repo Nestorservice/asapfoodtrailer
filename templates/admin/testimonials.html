@@ -211,26 +211,56 @@
             <!-- Upload Zone -->
             <div class="admin-card mb-4">
                 <div class="admin-card-header">
-                    <h6><i class="bi bi-cloud-arrow-up"></i> Upload Testimonial Photos</h6>
+                    <h6><i class="bi bi-plus-circle"></i> Add New Testimonial</h6>
                 </div>
                 <div class="admin-card-body">
-                    <div class="upload-zone" id="uploadZone"
-                        ondragover="event.preventDefault(); this.classList.add('dragover');"
-                        ondragleave="this.classList.remove('dragover');" ondrop="handleDrop(event)">
-                        <i class="bi bi-cloud-arrow-up"></i>
-                        <p><strong>Drag & drop images here</strong><br>or click to browse</p>
-                        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
-                            <i class="bi bi-plus-lg"></i> Choose Files
-                        </button>
-                        <input type="file" id="fileInput" accept="image/*" multiple style="display:none;"
-                            onchange="handleFiles(this.files)">
-                    </div>
-                    <div class="upload-progress" id="uploadProgress">
-                        <div class="progress">
-                            <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+                    <form id="testimonialForm" onsubmit="submitTestimonial(event)">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold"><i class="bi bi-person"></i> Client Name</label>
+                                <input type="text" class="form-control" name="name" placeholder="e.g. John Smith"
+                                    style="border-radius:10px;padding:10px 14px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold"><i class="bi bi-briefcase"></i> Role /
+                                    Business</label>
+                                <input type="text" class="form-control" name="role" placeholder="e.g. Food Truck Owner"
+                                    style="border-radius:10px;padding:10px 14px;">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold"><i class="bi bi-chat-quote"></i> Testimonial
+                                    Text</label>
+                                <textarea class="form-control" name="text" rows="3"
+                                    placeholder="What did the client say about your service?"
+                                    style="border-radius:10px;padding:10px 14px;"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold"><i class="bi bi-star"></i> Rating</label>
+                                <select class="form-select" name="rating" style="border-radius:10px;padding:10px 14px;">
+                                    <option value="5">⭐⭐⭐⭐⭐ (5 stars)</option>
+                                    <option value="4">⭐⭐⭐⭐ (4 stars)</option>
+                                    <option value="3">⭐⭐⭐ (3 stars)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold"><i class="bi bi-image"></i> Photo (optional)</label>
+                                <input type="file" class="form-control" name="image" accept="image/*"
+                                    style="border-radius:10px;padding:10px 14px;">
+                            </div>
+                            <div class="col-12">
+                                <div class="upload-progress" id="uploadProgress">
+                                    <div class="progress">
+                                        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+                                    </div>
+                                    <small class="text-muted mt-1 d-block" id="progressText">Uploading...</small>
+                                </div>
+                                <button type="submit" class="btn-upload mt-2" id="submitBtn"
+                                    style="width:100%;padding:12px;font-size:1rem;">
+                                    <i class="bi bi-plus-lg"></i> Add Testimonial
+                                </button>
+                            </div>
                         </div>
-                        <small class="text-muted mt-1 d-block" id="progressText">Uploading...</small>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -239,15 +269,30 @@
             <div class="gallery-grid" id="galleryGrid">
                 {% for t in testimonials %}
                 <div class="gallery-card" id="card-{{ t.id }}">
+                    {% if t.image_url %}
                     <img src="{{ t.image_url }}" alt="Testimonial" loading="lazy"
                         onerror="this.src='/assets/img/trucks/placeholder.jpg';">
+                    {% endif %}
+                    {% if t.name or t.text %}
+                    <div style="padding:12px;">
+                        {% if t.name %}<h6 style="margin:0 0 4px;font-weight:700;font-size:.9rem;">{{ t.name }}</h6>{%
+                        endif %}
+                        {% if t.role %}<small style="color:#888;">{{ t.role }}</small>{% endif %}
+                        {% if t.text %}<p style="margin:6px 0 0;font-size:.85rem;color:#555;line-height:1.4;">{{
+                            t.text[:120] }}{{ '...' if t.text|length > 120 }}</p>{% endif %}
+                        {% if t.rating %}
+                        <div style="margin-top:4px;">
+                            {% for i in range(t.rating|default(5)) %}<i class="bi bi-star-fill"
+                                style="color:#ff6b00;font-size:.7rem;"></i>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     <div class="card-actions">
-                        <span class="card-date">
-                            <i class="bi bi-calendar3"></i>
-                            {{ t.created_at[:10] if t.created_at else 'Unknown' }}
-                        </span>
+                        <span class="card-date"><i class="bi bi-calendar3"></i> {{ t.created_at[:10] if t.created_at
+                            else 'Unknown' }}</span>
                         <button class="btn-delete"
-                            onclick="confirmDeleteTestimonial('{{ t.id }}', '{{ t.image_url }}')">
+                            onclick="confirmDeleteTestimonial('{{ t.id }}', '{{ t.image_url|default('') }}')">
                             <i class="bi bi-trash3"></i> Delete
                         </button>
                     </div>
@@ -258,7 +303,7 @@
             <div class="empty-state" id="emptyState">
                 <i class="bi bi-images"></i>
                 <h5>No Testimonials Yet</h5>
-                <p>Upload photos of client testimonials, completed projects, or happy customers.</p>
+                <p>Add client testimonials with photos and quotes to showcase on your website.</p>
             </div>
             {% endif %}
         </div>
@@ -330,53 +375,73 @@
             setTimeout(function () { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; setTimeout(function () { toast.remove(); }, 300); }, 3000);
         }
 
-        function handleDrop(e) {
-            e.preventDefault();
-            e.target.closest('.upload-zone').classList.remove('dragover');
-            handleFiles(e.dataTransfer.files);
-        }
+        function handleDrop(e) { e.preventDefault(); }
 
-        async function handleFiles(files) {
-            if (!files.length) return;
+        async function submitTestimonial(e) {
+            e.preventDefault();
+            var form = document.getElementById('testimonialForm');
+            var btn = document.getElementById('submitBtn');
             var progressEl = document.getElementById('uploadProgress');
             var progressBar = document.getElementById('progressBar');
             var progressText = document.getElementById('progressText');
-            progressEl.style.display = 'block';
-            var total = files.length, completed = 0;
 
-            for (var i = 0; i < files.length; i++) {
-                progressText.textContent = 'Uploading ' + (i + 1) + ' of ' + total + '...';
-                progressBar.style.width = (completed / total * 100) + '%';
-                var formData = new FormData();
-                formData.append('image', files[i]);
-                try {
-                    var resp = await fetch('/api/testimonials', { method: 'POST', body: formData });
-                    if (resp.ok) {
-                        var data = await resp.json();
-                        if (data.success) { addCardToGrid(data.testimonial); completed++; }
-                        else { showToast('Failed: ' + (data.detail || 'Unknown error'), 'error'); }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
+            progressEl.style.display = 'block';
+            progressBar.style.width = '50%';
+            progressText.textContent = 'Uploading testimonial...';
+
+            var fd = new FormData(form);
+            try {
+                var resp = await fetch('/api/testimonials', { method: 'POST', body: fd });
+                if (resp.ok) {
+                    var data = await resp.json();
+                    if (data.success) {
+                        addCardToGrid(data.testimonial);
+                        showToast('Testimonial added!', 'success');
+                        form.reset();
+                        var emptyState = document.getElementById('emptyState');
+                        if (emptyState) emptyState.remove();
+                        updateCount();
                     } else {
-                        var errData = {}; try { errData = await resp.json(); } catch (e) { }
-                        showToast('Upload failed: ' + (errData.detail || resp.statusText), 'error');
+                        showToast('Failed: ' + (data.detail || 'Unknown error'), 'error');
                     }
-                } catch (err) { showToast('Upload error: ' + err.message, 'error'); }
-            }
+                } else {
+                    var errData = {}; try { errData = await resp.json(); } catch (ex) { }
+                    showToast('Error: ' + (errData.detail || resp.statusText), 'error');
+                }
+            } catch (err) { showToast('Error: ' + err.message, 'error'); }
+
             progressBar.style.width = '100%';
-            if (completed > 0) { progressText.textContent = 'Done! ' + completed + ' photo(s) uploaded.'; showToast(completed + ' photo(s) uploaded!', 'success'); }
-            else { progressText.textContent = 'Upload failed.'; }
-            setTimeout(function () { progressEl.style.display = 'none'; progressBar.style.width = '0%'; }, 2000);
-            var emptyState = document.getElementById('emptyState');
-            if (emptyState && completed > 0) emptyState.remove();
-            updateCount();
+            progressText.textContent = 'Done!';
+            setTimeout(function () { progressEl.style.display = 'none'; progressBar.style.width = '0%'; }, 1500);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-plus-lg"></i> Add Testimonial';
         }
 
         function addCardToGrid(t) {
             var grid = document.getElementById('galleryGrid');
             if (!grid) { grid = document.createElement('div'); grid.className = 'gallery-grid'; grid.id = 'galleryGrid'; document.querySelector('.admin-content').appendChild(grid); }
             var card = document.createElement('div'); card.className = 'gallery-card'; card.id = 'card-' + t.id;
-            card.innerHTML = '<img src="' + t.image_url + '" alt="Testimonial" loading="lazy" onerror="this.src=\'/assets/img/trucks/placeholder.jpg\';">' +
-                '<div class="card-actions"><span class="card-date"><i class="bi bi-calendar3"></i> ' + (t.created_at ? t.created_at.substring(0, 10) : 'Today') + '</span>' +
-                '<button class="btn-delete" onclick="confirmDeleteTestimonial(\'' + t.id + '\', \'' + t.image_url + '\')"><i class="bi bi-trash3"></i> Delete</button></div>';
+            var html = '';
+            if (t.image_url) {
+                html += '<img src="' + t.image_url + '" alt="Testimonial" loading="lazy" onerror="this.src=\'/assets/img/trucks/placeholder.jpg\';">';
+            }
+            if (t.name || t.text) {
+                html += '<div style="padding:12px;">';
+                if (t.name) html += '<h6 style="margin:0 0 4px;font-weight:700;font-size:.9rem;">' + t.name + '</h6>';
+                if (t.role) html += '<small style="color:#888;">' + t.role + '</small>';
+                if (t.text) html += '<p style="margin:6px 0 0;font-size:.85rem;color:#555;line-height:1.4;">' + (t.text.length > 120 ? t.text.substring(0, 120) + '...' : t.text) + '</p>';
+                if (t.rating) {
+                    html += '<div style="margin-top:4px;">';
+                    for (var s = 0; s < t.rating; s++) html += '<i class="bi bi-star-fill" style="color:#ff6b00;font-size:.7rem;"></i>';
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+            html += '<div class="card-actions"><span class="card-date"><i class="bi bi-calendar3"></i> Today</span>' +
+                '<button class="btn-delete" onclick="confirmDeleteTestimonial(\'' + t.id + '\', \'' + (t.image_url || '') + '\')"><i class="bi bi-trash3"></i> Delete</button></div>';
+            card.innerHTML = html;
             grid.prepend(card);
         }
 

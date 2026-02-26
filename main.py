@@ -110,6 +110,11 @@ def get_base_context(request: Request) -> dict:
             "city": settings.BUSINESS_CITY,
             "whatsapp": settings.BUSINESS_WHATSAPP,
         },
+        "social": {
+            "tiktok": settings.SOCIAL_TIKTOK,
+            "facebook": settings.SOCIAL_FACEBOOK,
+            "instagram": settings.SOCIAL_INSTAGRAM,
+        },
         "firebase_config": {
             "apiKey": settings.FIREBASE_API_KEY,
             "authDomain": settings.FIREBASE_AUTH_DOMAIN,
@@ -542,21 +547,41 @@ async def api_fleet_stats():
 
 @app.post("/api/testimonials")
 async def api_create_testimonial(
-    image: UploadFile = File(...),
+    image: UploadFile = File(None),
+    name: str = Form(""),
+    text: str = Form(""),
+    rating: int = Form(5),
+    role: str = Form(""),
 ):
-    """API: Upload a new testimonial image."""
-    if image.filename:
+    """API: Upload a new testimonial (image and/or text)."""
+    testimonial_data = {}
+
+    # Process image if provided
+    if image and image.filename:
         try:
             result = await image_processor.process_upload(image)
             url = result.get("large", result.get("original", ""))
-            testimonial = db.create_testimonial({"image_url": url})
-            return {"success": True, "testimonial": testimonial}
+            testimonial_data["image_url"] = url
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
             print(f"Testimonial upload error: {e}")
             raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
-    raise HTTPException(status_code=400, detail="No image provided")
+
+    # Add text fields
+    if name:
+        testimonial_data["name"] = name
+    if text:
+        testimonial_data["text"] = text
+    if role:
+        testimonial_data["role"] = role
+    testimonial_data["rating"] = rating
+
+    if not testimonial_data.get("image_url") and not testimonial_data.get("text"):
+        raise HTTPException(status_code=400, detail="Provide an image or text")
+
+    testimonial = db.create_testimonial(testimonial_data)
+    return {"success": True, "testimonial": testimonial}
 
 
 @app.delete("/api/testimonials/{testimonial_id}")
