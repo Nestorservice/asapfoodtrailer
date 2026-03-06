@@ -100,15 +100,18 @@ async def startup_event():
 # ─── Template Helpers ─────────────────────────────────────────
 def get_base_context(request: Request) -> dict:
     """Build base template context with business info and SEO."""
+    # Load admin-managed phone numbers from DB
+    phone_settings = db.get_settings()
     return {
         "request": request,
         "business": {
             "name": settings.BUSINESS_NAME,
-            "phone": settings.BUSINESS_PHONE,
+            "phone": phone_settings.get("phone_call") or settings.BUSINESS_PHONE,
             "email": settings.BUSINESS_EMAIL,
             "address": settings.BUSINESS_ADDRESS,
             "city": settings.BUSINESS_CITY,
-            "whatsapp": settings.BUSINESS_WHATSAPP,
+            "whatsapp": phone_settings.get("whatsapp") or settings.BUSINESS_WHATSAPP,
+            "sms": phone_settings.get("phone_sms") or "",
         },
         "social": {
             "tiktok": settings.SOCIAL_TIKTOK,
@@ -288,6 +291,30 @@ async def admin_testimonials(request: Request):
     ctx = get_base_context(request)
     ctx["testimonials"] = db.get_testimonials()
     return templates.TemplateResponse("admin/testimonials.html", ctx)
+
+
+@app.get("/admin/settings", response_class=HTMLResponse)
+async def admin_settings_page(request: Request):
+    """Admin settings page — manage phone numbers."""
+    ctx = get_base_context(request)
+    ctx["phone_settings"] = db.get_settings()
+    return templates.TemplateResponse("admin/settings.html", ctx)
+
+
+@app.get("/api/settings")
+async def api_get_settings():
+    """API: Get current settings."""
+    return db.get_settings()
+
+
+@app.put("/api/settings")
+async def api_update_settings(request: Request):
+    """API: Update settings (phone numbers)."""
+    data = await request.json()
+    allowed_keys = {"whatsapp", "phone_call", "phone_sms"}
+    filtered = {k: v for k, v in data.items() if k in allowed_keys}
+    result = db.update_settings(filtered)
+    return {"success": True, "settings": result}
 
 
 # ═══════════════════════════════════════════════════════════════

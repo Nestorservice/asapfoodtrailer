@@ -370,7 +370,41 @@ class DatabaseService:
                 .limit(limit)
                 .stream()
             )
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            return [{\"id\": doc.id, **doc.to_dict()} for doc in docs]
+
+    # ─── Settings ─────────────────────────────────────────────
+
+    def get_settings(self) -> dict:
+        """Get app settings (phone numbers, etc.)."""
+        defaults = {
+            "whatsapp": "",
+            "phone_call": "",
+            "phone_sms": "",
+        }
+        if self.mode == "local":
+            data = self._load_local_data()
+            return {**defaults, **data.get("settings", {})}
+        else:
+            try:
+                doc = self.db.collection("settings").document("phone_numbers").get()
+                if doc.exists:
+                    return {**defaults, **doc.to_dict()}
+            except Exception as e:
+                print(f"Error loading settings: {e}")
+            return defaults
+
+    def update_settings(self, settings_data: dict) -> dict:
+        """Update app settings."""
+        if self.mode == "local":
+            data = self._load_local_data()
+            data.setdefault("settings", {}).update(settings_data)
+            self._save_local_data()
+            return data["settings"]
+        else:
+            self.db.collection("settings").document("phone_numbers").set(
+                settings_data, merge=True
+            )
+            return settings_data
 
 
 # Singleton

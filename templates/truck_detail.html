@@ -107,7 +107,7 @@
                         <a href="tel:{{ business.phone }}" class="btn btn-outline-dark"
                             style="border-radius:8px;padding:12px;font-weight:600;"><i class="bi bi-telephone"></i> Call
                             Now — {{ business.phone }}</a>
-                        <a href="sms:+{{ business.whatsapp }}?body={{ ('Hi, I\'m interested in ' ~ truck.title ~ '. Can you share more info?') | urlencode }}"
+                        <a href="sms:+{{ business.sms or business.whatsapp }}?body={{ ('Hi, I\'m interested in ' ~ truck.title ~ '. Can you share more info?') | urlencode }}"
                             class="btn btn-outline-secondary" style="border-radius:8px;padding:12px;font-weight:600;"><i
                                 class="bi bi-chat-dots"></i> Send SMS</a>
                     </div>
