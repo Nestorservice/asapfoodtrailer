@@ -247,18 +247,18 @@
                     <h6><i class="bi bi-eye"></i> Currently Active Numbers</h6>
                     <div class="number-preview">
                         <i class="bi bi-whatsapp whatsapp-icon"></i>
-                        <span id="previewWA">{{ phone_settings.whatsapp or '<span class="empty">Not set</span>'
-                            }}</span>
+                        <span id="previewWA">{% if phone_settings.whatsapp %}{{ phone_settings.whatsapp }}{% else
+                            %}<span class="empty">Not set</span>{% endif %}</span>
                     </div>
                     <div class="number-preview">
                         <i class="bi bi-telephone-fill call-icon"></i>
-                        <span id="previewCall">{{ phone_settings.phone_call or '<span class="empty">Not set</span>'
-                            }}</span>
+                        <span id="previewCall">{% if phone_settings.phone_call %}{{ phone_settings.phone_call }}{% else
+                            %}<span class="empty">Not set</span>{% endif %}</span>
                     </div>
                     <div class="number-preview">
                         <i class="bi bi-chat-dots-fill sms-icon"></i>
-                        <span id="previewSMS">{{ phone_settings.phone_sms or '<span class="empty">Not set</span>'
-                            }}</span>
+                        <span id="previewSMS">{% if phone_settings.phone_sms %}{{ phone_settings.phone_sms }}{% else
+                            %}<span class="empty">Not set</span>{% endif %}</span>
                     </div>
                 </div>
             </div>
