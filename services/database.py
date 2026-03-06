@@ -370,7 +370,7 @@ class DatabaseService:
                 .limit(limit)
                 .stream()
             )
-            return [{\"id\": doc.id, **doc.to_dict()} for doc in docs]
+            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
 
     # ─── Settings ─────────────────────────────────────────────
 
