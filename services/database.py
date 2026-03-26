@@ -1,14 +1,19 @@
 """
 ASAP Food Trailer - Database Service
 Dual mode: local JSON storage or Firebase Firestore
+Includes in-memory cache (5 min TTL) to reduce Firestore reads.
 """
 
 import json
 import os
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 from config import settings
+
+# ─── Cache TTL (seconds) ─────────────────────────────────────
+CACHE_TTL = 300  # 5 minutes
 
 
 class DatabaseService:
@@ -18,9 +23,34 @@ class DatabaseService:
         self.mode = settings.APP_MODE
         self.data_file = os.path.join(settings.DATA_DIR, "seed.json")
         self._data = None
+        # In-memory cache: { key: { "data": ..., "ts": timestamp } }
+        self._cache: dict = {}
 
         if self.mode == "firebase":
             self._init_firebase()
+
+    # ─── Cache helpers ────────────────────────────────────────
+
+    def _cache_get(self, key: str):
+        """Return cached value if present and not expired, else None."""
+        entry = self._cache.get(key)
+        if entry and (time.time() - entry["ts"]) < CACHE_TTL:
+            return entry["data"]
+        return None
+
+    def _cache_set(self, key: str, data):
+        """Store a value in the cache with current timestamp."""
+        self._cache[key] = {"data": data, "ts": time.time()}
+
+    def _cache_invalidate(self, prefix: str = ""):
+        """Remove cache entries whose key starts with *prefix*.
+        If prefix is empty, flush the entire cache."""
+        if not prefix:
+            self._cache.clear()
+        else:
+            keys_to_delete = [k for k in self._cache if k.startswith(prefix)]
+            for k in keys_to_delete:
+                del self._cache[k]
 
     def _init_firebase(self):
         """Initialize Firebase Admin SDK."""
@@ -104,7 +134,12 @@ class DatabaseService:
                     ]
             return trucks
         else:
-            # Firestore
+            # Build a stable cache key from the filters
+            cache_key = f"trucks:{json.dumps(filters, sort_keys=True) if filters else 'all'}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             ref = self.db.collection("trucks")
             if filters:
                 if filters.get("category"):
@@ -116,7 +151,9 @@ class DatabaseService:
                 if filters.get("status"):
                     ref = ref.where("status", "==", filters["status"])
             docs = ref.stream()
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     def get_truck(self, truck_id: str) -> Optional[dict]:
         """Get a single truck by ID."""
@@ -127,9 +164,16 @@ class DatabaseService:
                     return truck
             return None
         else:
+            cache_key = f"truck:{truck_id}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             doc = self.db.collection("trucks").document(truck_id).get()
             if doc.exists:
-                return {"id": doc.id, **doc.to_dict()}
+                result = {"id": doc.id, **doc.to_dict()}
+                self._cache_set(cache_key, result)
+                return result
             return None
 
     def get_truck_by_slug(self, slug: str) -> Optional[dict]:
@@ -141,11 +185,18 @@ class DatabaseService:
                     return truck
             return None
         else:
+            cache_key = f"truck_slug:{slug}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             docs = (
                 self.db.collection("trucks").where("slug", "==", slug).limit(1).stream()
             )
             for doc in docs:
-                return {"id": doc.id, **doc.to_dict()}
+                result = {"id": doc.id, **doc.to_dict()}
+                self._cache_set(cache_key, result)
+                return result
             return None
 
     def create_truck(self, truck_data: dict) -> dict:
@@ -160,6 +211,9 @@ class DatabaseService:
             self._save_local_data()
         else:
             self.db.collection("trucks").document(truck_data["id"]).set(truck_data)
+            self._cache_invalidate("trucks:")
+            self._cache_invalidate("featured:")
+            self._cache_invalidate("fleet_stats")
         return truck_data
 
     def update_truck(self, truck_id: str, update_data: dict) -> Optional[dict]:
@@ -175,6 +229,12 @@ class DatabaseService:
         else:
             ref = self.db.collection("trucks").document(truck_id)
             ref.update(update_data)
+            # Invalidate related caches
+            self._cache_invalidate("truck:")
+            self._cache_invalidate("trucks:")
+            self._cache_invalidate("featured:")
+            self._cache_invalidate("fleet_stats")
+            self._cache_invalidate("most_viewed")
             return {"id": truck_id, **ref.get().to_dict()}
 
     def delete_truck(self, truck_id: str) -> bool:
@@ -189,6 +249,11 @@ class DatabaseService:
             return False
         else:
             self.db.collection("trucks").document(truck_id).delete()
+            self._cache_invalidate("truck:")
+            self._cache_invalidate("trucks:")
+            self._cache_invalidate("featured:")
+            self._cache_invalidate("fleet_stats")
+            self._cache_invalidate("most_viewed")
             return True
 
     def increment_views(self, truck_id: str):
@@ -206,6 +271,7 @@ class DatabaseService:
             self.db.collection("trucks").document(truck_id).update(
                 {"views": Increment(1)}
             )
+            # Don't invalidate cache here — views are cosmetic, avoids extra reads
 
     # ─── Featured & Stats ─────────────────────────────────────
 
@@ -220,6 +286,11 @@ class DatabaseService:
             ]
             return featured[:limit]
         else:
+            cache_key = f"featured:{limit}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             docs = (
                 self.db.collection("trucks")
                 .where("featured", "==", True)
@@ -227,7 +298,9 @@ class DatabaseService:
                 .limit(limit)
                 .stream()
             )
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     def get_fleet_stats(self) -> dict:
         """Get fleet status counters."""
@@ -241,13 +314,20 @@ class DatabaseService:
                 "sold": len([t for t in trucks if t["status"] == "sold"]),
             }
         else:
+            cache_key = "fleet_stats"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             trucks = [doc.to_dict() for doc in self.db.collection("trucks").stream()]
-            return {
+            result = {
                 "total": len(trucks),
                 "available": len([t for t in trucks if t.get("status") == "available"]),
                 "rented": len([t for t in trucks if t.get("status") == "rented"]),
                 "sold": len([t for t in trucks if t.get("status") == "sold"]),
             }
+            self._cache_set(cache_key, result)
+            return result
 
     # ─── Leads ────────────────────────────────────────────────
 
@@ -262,6 +342,7 @@ class DatabaseService:
             self._save_local_data()
         else:
             self.db.collection("leads").document(lead_data["id"]).set(lead_data)
+            self._cache_invalidate("leads")
         return lead_data
 
     def get_leads(self) -> list:
@@ -270,12 +351,19 @@ class DatabaseService:
             data = self._load_local_data()
             return data.get("leads", [])
         else:
+            cache_key = "leads"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             docs = (
                 self.db.collection("leads")
                 .order_by("date", direction="DESCENDING")
                 .stream()
             )
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     # ─── Analytics ────────────────────────────────────────────
 
@@ -293,6 +381,7 @@ class DatabaseService:
             self._save_local_data()
         else:
             self.db.collection("analytics").document(event["id"]).set(event)
+            # Don't invalidate analytics cache on every write — too frequent
 
     def get_analytics(self, days: int = 30) -> list:
         """Get analytics events for the last N days."""
@@ -300,6 +389,11 @@ class DatabaseService:
             data = self._load_local_data()
             return data.get("analytics", [])
         else:
+            cache_key = f"analytics:{days}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             from datetime import timedelta
 
             cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
@@ -309,7 +403,9 @@ class DatabaseService:
                 .order_by("timestamp", direction="DESCENDING")
                 .stream()
             )
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     # ─── Testimonials ─────────────────────────────────────────
 
@@ -319,8 +415,15 @@ class DatabaseService:
             data = self._load_local_data()
             return data.get("testimonials", [])
         else:
+            cache_key = "testimonials"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             docs = self.db.collection("testimonials").stream()
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     def create_testimonial(self, testimonial_data: dict) -> dict:
         """Create a new testimonial (image card)."""
@@ -335,6 +438,7 @@ class DatabaseService:
             self.db.collection("testimonials").document(testimonial_data["id"]).set(
                 testimonial_data
             )
+            self._cache_invalidate("testimonials")
         return testimonial_data
 
     def delete_testimonial(self, testimonial_id: str) -> bool:
@@ -351,6 +455,7 @@ class DatabaseService:
             return False
         else:
             self.db.collection("testimonials").document(testimonial_id).delete()
+            self._cache_invalidate("testimonials")
             return True
 
     # ─── Most Viewed Trucks ──────────────────────────────────
@@ -364,13 +469,20 @@ class DatabaseService:
             )
             return trucks[:limit]
         else:
+            cache_key = f"most_viewed:{limit}"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             docs = (
                 self.db.collection("trucks")
                 .order_by("views", direction="DESCENDING")
                 .limit(limit)
                 .stream()
             )
-            return [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+            self._cache_set(cache_key, result)
+            return result
 
     # ─── Settings ─────────────────────────────────────────────
 
@@ -385,10 +497,17 @@ class DatabaseService:
             data = self._load_local_data()
             return {**defaults, **data.get("settings", {})}
         else:
+            cache_key = "settings"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
             try:
                 doc = self.db.collection("settings").document("phone_numbers").get()
                 if doc.exists:
-                    return {**defaults, **doc.to_dict()}
+                    result = {**defaults, **doc.to_dict()}
+                    self._cache_set(cache_key, result)
+                    return result
             except Exception as e:
                 print(f"Error loading settings: {e}")
             return defaults
@@ -404,6 +523,7 @@ class DatabaseService:
             self.db.collection("settings").document("phone_numbers").set(
                 settings_data, merge=True
             )
+            self._cache_invalidate("settings")
             return settings_data
 
 

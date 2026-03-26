@@ -101,7 +101,11 @@ async def startup_event():
 def get_base_context(request: Request) -> dict:
     """Build base template context with business info and SEO."""
     # Load admin-managed phone numbers from DB
-    phone_settings = db.get_settings()
+    try:
+        phone_settings = db.get_settings()
+    except Exception as e:
+        print(f"[ERROR] get_settings failed: {e}")
+        phone_settings = {}
     return {
         "request": request,
         "business": {
@@ -179,9 +183,21 @@ async def homepage(request: Request):
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="home")
     ctx["business_jsonld"] = json.dumps(seo_service.generate_business_jsonld())
-    ctx["featured_trucks"] = db.get_featured_trucks(limit=6)
-    ctx["fleet_stats"] = db.get_fleet_stats()
-    ctx["testimonials"] = db.get_testimonials()
+    try:
+        ctx["featured_trucks"] = db.get_featured_trucks(limit=6)
+    except Exception as e:
+        print(f"[ERROR] get_featured_trucks failed: {e}")
+        ctx["featured_trucks"] = []
+    try:
+        ctx["fleet_stats"] = db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] get_fleet_stats failed: {e}")
+        ctx["fleet_stats"] = {"total": 0, "available": 0, "rented": 0, "sold": 0}
+    try:
+        ctx["testimonials"] = db.get_testimonials()
+    except Exception as e:
+        print(f"[ERROR] get_testimonials failed: {e}")
+        ctx["testimonials"] = []
     return templates.TemplateResponse("index.html", ctx)
 
 
@@ -212,7 +228,11 @@ async def catalog(
 
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="catalog")
-    ctx["trucks"] = db.get_trucks(filters if filters else None)
+    try:
+        ctx["trucks"] = db.get_trucks(filters if filters else None)
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        ctx["trucks"] = []
     ctx["filters"] = filters
     return templates.TemplateResponse("catalog.html", ctx)
 
@@ -222,7 +242,11 @@ async def about_page(request: Request):
     """About page."""
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="about")
-    ctx["fleet_stats"] = db.get_fleet_stats()
+    try:
+        ctx["fleet_stats"] = db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] get_fleet_stats failed: {e}")
+        ctx["fleet_stats"] = {"total": 0, "available": 0, "rented": 0, "sold": 0}
     return templates.TemplateResponse("about.html", ctx)
 
 
@@ -252,13 +276,33 @@ async def admin_dashboard(request: Request, days: int = 30):
     # Clamp days to valid range
     days = max(7, min(days, 365))
     ctx = get_base_context(request)
-    ctx["fleet_stats"] = db.get_fleet_stats()
-    events = db.get_analytics(days=days)
+    try:
+        ctx["fleet_stats"] = db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] get_fleet_stats failed: {e}")
+        ctx["fleet_stats"] = {"total": 0, "available": 0, "rented": 0, "sold": 0}
+    try:
+        events = db.get_analytics(days=days)
+    except Exception as e:
+        print(f"[ERROR] get_analytics failed: {e}")
+        events = []
     ctx["analytics"] = analytics_service.aggregate_dashboard_data(events, days=days)
-    ctx["most_viewed"] = db.get_most_viewed(limit=5)
-    ctx["recent_leads"] = db.get_leads()[:10]
+    try:
+        ctx["most_viewed"] = db.get_most_viewed(limit=5)
+    except Exception as e:
+        print(f"[ERROR] get_most_viewed failed: {e}")
+        ctx["most_viewed"] = []
+    try:
+        ctx["recent_leads"] = db.get_leads()[:10]
+    except Exception as e:
+        print(f"[ERROR] get_leads failed: {e}")
+        ctx["recent_leads"] = []
     # Build trucks_by_id for lead→vehicle resolution
-    all_trucks = db.get_trucks()
+    try:
+        all_trucks = db.get_trucks()
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        all_trucks = []
     ctx["trucks_by_id"] = {t["id"]: t for t in all_trucks}
     ctx["all_trucks"] = all_trucks
     ctx["selected_days"] = days
@@ -269,8 +313,16 @@ async def admin_dashboard(request: Request, days: int = 30):
 async def admin_inventory(request: Request):
     """Admin inventory management page."""
     ctx = get_base_context(request)
-    ctx["trucks"] = db.get_trucks()
-    ctx["fleet_stats"] = db.get_fleet_stats()
+    try:
+        ctx["trucks"] = db.get_trucks()
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        ctx["trucks"] = []
+    try:
+        ctx["fleet_stats"] = db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] get_fleet_stats failed: {e}")
+        ctx["fleet_stats"] = {"total": 0, "available": 0, "rented": 0, "sold": 0}
     return templates.TemplateResponse("admin/inventory.html", ctx)
 
 
@@ -278,9 +330,17 @@ async def admin_inventory(request: Request):
 async def admin_leads(request: Request):
     """Admin leads management page."""
     ctx = get_base_context(request)
-    ctx["leads"] = db.get_leads()
+    try:
+        ctx["leads"] = db.get_leads()
+    except Exception as e:
+        print(f"[ERROR] get_leads failed: {e}")
+        ctx["leads"] = []
     # Build trucks_by_id for lead→vehicle resolution
-    all_trucks = db.get_trucks()
+    try:
+        all_trucks = db.get_trucks()
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        all_trucks = []
     ctx["trucks_by_id"] = {t["id"]: t for t in all_trucks}
     return templates.TemplateResponse("admin/leads.html", ctx)
 
@@ -289,7 +349,11 @@ async def admin_leads(request: Request):
 async def admin_testimonials(request: Request):
     """Admin testimonials gallery management."""
     ctx = get_base_context(request)
-    ctx["testimonials"] = db.get_testimonials()
+    try:
+        ctx["testimonials"] = db.get_testimonials()
+    except Exception as e:
+        print(f"[ERROR] get_testimonials failed: {e}")
+        ctx["testimonials"] = []
     return templates.TemplateResponse("admin/testimonials.html", ctx)
 
 
@@ -297,14 +361,22 @@ async def admin_testimonials(request: Request):
 async def admin_settings_page(request: Request):
     """Admin settings page — manage phone numbers."""
     ctx = get_base_context(request)
-    ctx["phone_settings"] = db.get_settings()
+    try:
+        ctx["phone_settings"] = db.get_settings()
+    except Exception as e:
+        print(f"[ERROR] get_settings failed: {e}")
+        ctx["phone_settings"] = {"whatsapp": "", "phone_call": "", "phone_sms": ""}
     return templates.TemplateResponse("admin/settings.html", ctx)
 
 
 @app.get("/api/settings")
 async def api_get_settings():
     """API: Get current settings."""
-    return db.get_settings()
+    try:
+        return db.get_settings()
+    except Exception as e:
+        print(f"[ERROR] api get_settings failed: {e}")
+        return {"whatsapp": "", "phone_call": "", "phone_sms": ""}
 
 
 @app.put("/api/settings")
@@ -559,17 +631,33 @@ async def api_create_lead(
 @app.get("/api/analytics/dashboard")
 async def api_analytics_dashboard():
     """API: Get dashboard analytics data."""
-    events = db.get_analytics(days=30)
+    try:
+        events = db.get_analytics(days=30)
+    except Exception as e:
+        print(f"[ERROR] get_analytics failed: {e}")
+        events = []
     data = analytics_service.aggregate_dashboard_data(events)
-    data["fleet_stats"] = db.get_fleet_stats()
-    data["most_viewed"] = db.get_most_viewed(limit=5)
+    try:
+        data["fleet_stats"] = db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] get_fleet_stats failed: {e}")
+        data["fleet_stats"] = {"total": 0, "available": 0, "rented": 0, "sold": 0}
+    try:
+        data["most_viewed"] = db.get_most_viewed(limit=5)
+    except Exception as e:
+        print(f"[ERROR] get_most_viewed failed: {e}")
+        data["most_viewed"] = []
     return data
 
 
 @app.get("/api/fleet-stats")
 async def api_fleet_stats():
     """API: Get fleet status counters."""
-    return db.get_fleet_stats()
+    try:
+        return db.get_fleet_stats()
+    except Exception as e:
+        print(f"[ERROR] api get_fleet_stats failed: {e}")
+        return {"total": 0, "available": 0, "rented": 0, "sold": 0}
 
 
 @app.post("/api/testimonials")
@@ -628,7 +716,11 @@ async def api_delete_testimonial(testimonial_id: str):
 @app.get("/sitemap.xml")
 async def sitemap():
     """Dynamic XML sitemap."""
-    trucks = db.get_trucks()
+    try:
+        trucks = db.get_trucks()
+    except Exception as e:
+        print(f"[ERROR] get_trucks for sitemap failed: {e}")
+        trucks = []
     xml_content = seo_service.generate_sitemap(trucks)
     return Response(content=xml_content, media_type="application/xml")
 
@@ -657,18 +749,29 @@ async def truck_detail(request: Request, truck_type: str, slug: str):
     if truck_type not in ("truck", "trailer"):
         raise HTTPException(status_code=404, detail="Page not found")
 
-    truck = db.get_truck_by_slug(slug)
+    try:
+        truck = db.get_truck_by_slug(slug)
+    except Exception as e:
+        print(f"[ERROR] get_truck_by_slug failed: {e}")
+        raise HTTPException(status_code=503, detail="Service temporarily unavailable")
     if not truck:
         raise HTTPException(status_code=404, detail="Truck not found")
 
     # Increment views
-    db.increment_views(truck["id"])
+    try:
+        db.increment_views(truck["id"])
+    except Exception as e:
+        print(f"[ERROR] increment_views failed: {e}")
 
     ctx = get_base_context(request)
     ctx["truck"] = truck
     ctx["meta"] = seo_service.generate_meta_tags(truck=truck)
     ctx["product_jsonld"] = json.dumps(seo_service.generate_product_jsonld(truck))
-    ctx["related_trucks"] = db.get_trucks({"category": truck_type})[:4]
+    try:
+        ctx["related_trucks"] = db.get_trucks({"category": truck_type})[:4]
+    except Exception as e:
+        print(f"[ERROR] get related trucks failed: {e}")
+        ctx["related_trucks"] = []
     return templates.TemplateResponse("truck_detail.html", ctx)
 
 
@@ -679,7 +782,10 @@ async def truck_detail(request: Request, truck_type: str, slug: str):
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
-    ctx = get_base_context(request)
+    try:
+        ctx = get_base_context(request)
+    except Exception:
+        ctx = {"request": request, "business": {"name": settings.BUSINESS_NAME}, "social": {}, "firebase_config": {}, "app_mode": settings.APP_MODE}
     ctx["meta"] = {"title": "Page Not Found | " + settings.BUSINESS_NAME}
     return templates.TemplateResponse("error.html", ctx, status_code=404)
 
