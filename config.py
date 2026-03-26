@@ -20,6 +20,10 @@ class Settings:
     FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN", "")
     FIREBASE_STORAGE_BUCKET = os.getenv("FIREBASE_STORAGE_BUCKET", "")
 
+    # Stream Chat
+    STREAM_API_KEY = os.getenv("STREAM_API_KEY", "")
+    STREAM_API_SECRET = os.getenv("STREAM_API_SECRET", "")
+
     # Admin
     ADMIN_EMAILS = [
         e.strip()

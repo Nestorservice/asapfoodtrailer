@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat — ASAP Admin</title>
+    <link rel="shortcut icon" href="/assets/img/logo/favicon.svg" type="image/x-icon">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <style>
+        /* ─── Chat Page Layout ─── */
+        .chat-layout{display:flex;height:calc(100vh - 64px);overflow:hidden}
+        .chat-sidebar{width:360px;border-right:1px solid #eee;display:flex;flex-direction:column;background:#fff;flex-shrink:0}
+        .chat-main{flex:1;display:flex;flex-direction:column;background:#f8f9fa}
+
+        /* Top Stats */
+        .chat-stats{display:flex;gap:16px;padding:16px 20px;border-bottom:1px solid #eee;background:#fff;flex-wrap:wrap}
+        .chat-stat-item{text-align:center;flex:1;min-width:100px}
+        .chat-stat-item h4{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.3rem;color:#1a1a2e;margin:0}
+        .chat-stat-item small{font-size:.72rem;color:#999;font-weight:500}
+
+        /* Search + Filters */
+        .chat-search{padding:12px 16px;border-bottom:1px solid #eee}
+        .chat-search input{width:100%;padding:10px 14px 10px 36px;border:1px solid #e5e5e5;border-radius:10px;font-size:.85rem;outline:none;background:#f8f9fa url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23999" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001l3.85 3.85a1 1 0 001.415-1.414l-3.867-3.834zm-5.242.656a5 5 0 110-10 5 5 0 010 10z"/></svg>') no-repeat 12px center;transition:border-color .2s}
+        .chat-search input:focus{border-color:#ff6b00;background-color:#fff}
+        .chat-filters{display:flex;gap:6px;margin-top:8px}
+        .chat-filter-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.75rem;font-weight:600;background:#fff;color:#777;cursor:pointer;transition:all .2s}
+        .chat-filter-btn:hover,.chat-filter-btn.active{background:#ff6b00;color:#fff;border-color:#ff6b00}
+
+        /* Conversation List */
+        .conv-list{flex:1;overflow-y:auto}
+        .conv-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .2s;position:relative}
+        .conv-item:hover,.conv-item.active{background:#fff5ee}
+        .conv-item.active{border-left:3px solid #ff6b00}
+        .conv-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff8c33);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;position:relative}
+        .conv-avatar .online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:#4ade80;border:2px solid #fff}
+        .conv-info{flex:1;min-width:0}
+        .conv-info .conv-name{font-weight:700;font-size:.88rem;color:#1a1a2e;display:flex;align-items:center;gap:6px}
+        .conv-info .conv-name .conv-email{font-weight:400;font-size:.72rem;color:#999}
+        .conv-info .conv-last-msg{font-size:.8rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+        .conv-info .conv-page{font-size:.68rem;color:#aaa;margin-top:2px}
+        .conv-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+        .conv-meta .conv-time{font-size:.68rem;color:#bbb}
+        .conv-meta .conv-unread{width:20px;height:20px;border-radius:50%;background:#dc3545;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+
+        /* Chat Main Area */
+        .chat-header-bar{padding:14px 20px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+        .chat-header-bar .visitor-info{display:flex;align-items:center;gap:12px}
+        .chat-header-bar .visitor-info h6{margin:0;font-weight:700;font-size:.95rem}
+        .chat-header-bar .visitor-info span{font-size:.75rem;color:#999}
+        .chat-header-bar .chat-actions{display:flex;gap:6px}
+        .chat-header-bar .chat-actions button{padding:6px 14px;border-radius:8px;font-size:.78rem;font-weight:600;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
+        .chat-header-bar .chat-actions button:hover{background:#f0f0f0}
+        .chat-header-bar .chat-actions .resolve-btn{border-color:#198754;color:#198754}
+        .chat-header-bar .chat-actions .resolve-btn:hover{background:#198754;color:#fff}
+
+        /* Messages area */
+        .admin-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
+        .admin-msg{max-width:70%;display:flex;flex-direction:column}
+        .admin-msg.from-visitor{align-self:flex-start}
+        .admin-msg.from-admin{align-self:flex-end}
+        .admin-msg .msg-bubble{padding:10px 14px;border-radius:14px;font-size:.88rem;line-height:1.5}
+        .admin-msg.from-visitor .msg-bubble{background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.06);border-bottom-left-radius:4px}
+        .admin-msg.from-admin .msg-bubble{background:#ff6b00;color:#fff;border-bottom-right-radius:4px}
+        .admin-msg .msg-meta{font-size:.68rem;color:#bbb;margin-top:3px}
+        .admin-msg.from-admin .msg-meta{text-align:right}
+        .admin-msg .msg-bubble img{max-width:260px;border-radius:8px;margin-top:4px;cursor:pointer}
+        .admin-msg .msg-bubble .file-link{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,.06);border-radius:8px;margin-top:4px;text-decoration:none;color:inherit;font-size:.8rem;font-weight:500}
+        .admin-msg.from-admin .msg-bubble .file-link{background:rgba(255,255,255,.15);color:#fff}
+
+        .admin-typing{display:none;padding:6px 20px;color:#999;font-size:.78rem;font-style:italic}
+
+        /* Input */
+        .admin-input-area{padding:12px 20px;background:#fff;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px}
+        .quick-replies{display:flex;gap:6px;flex-wrap:wrap}
+        .quick-reply-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.72rem;background:#fff;color:#666;cursor:pointer;transition:all .2s;white-space:nowrap}
+        .quick-reply-btn:hover{background:#ff6b00;color:#fff;border-color:#ff6b00}
+        .admin-input-row{display:flex;gap:8px;align-items:flex-end}
+        .admin-input-row textarea{flex:1;border:1px solid #e5e5e5;border-radius:12px;padding:10px 14px;font-size:.88rem;font-family:'Inter',sans-serif;resize:none;max-height:80px;min-height:40px;outline:none;transition:border-color .2s}
+        .admin-input-row textarea:focus{border-color:#ff6b00}
+        .admin-input-row button{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+        .admin-send-btn{background:#ff6b00;color:#fff;font-size:1rem}
+        .admin-send-btn:hover{background:#e05e00}
+        .admin-send-btn:disabled{background:#ccc;cursor:not-allowed}
+        .admin-attach-btn{background:#f0f0f0;color:#666;font-size:.9rem}
+        .admin-attach-btn:hover{background:#e5e5e5}
+        .admin-file-preview{display:none;padding:4px 8px;background:#f0f0f0;border-radius:8px;font-size:.78rem;align-items:center;gap:6px}
+        .admin-file-preview span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .admin-file-preview button{background:none;border:none;color:#999;cursor:pointer}
+
+        /* Empty state */
+        .chat-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#ccc}
+        .chat-empty i{font-size:4rem;margin-bottom:12px}
+        .chat-empty p{font-size:1rem;font-weight:600;color:#aaa}
+        .chat-empty small{color:#ccc;font-size:.85rem}
+
+        /* Loading */
+        .chat-loading{display:flex;align-items:center;justify-content:center;flex:1;color:#999}
+        .chat-loading .spinner-border{width:24px;height:24px;border-width:3px}
+
+        /* Badge in sidebar nav */
+        .nav-chat-badge{background:#dc3545;color:#fff;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
+
+        /* Responsive */
+        @media(max-width:991px){
+            .chat-sidebar{width:100%;position:absolute;z-index:10;height:100%}
+            .chat-main{display:none}
+            .chat-layout.conv-open .chat-sidebar{display:none}
+            .chat-layout.conv-open .chat-main{display:flex}
+            .back-btn{display:inline-flex!important}
+        }
+        @media(min-width:992px){.back-btn{display:none!important}}
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <img src="/assets/img/logo/logo.jpg" alt="ASAP" class="sidebar-logo" style="height:32px;border-radius:6px;">
+            <button class="sidebar-close d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/admin/dashboard" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            <a href="/admin/inventory" class="nav-item"><i class="bi bi-truck"></i> Inventory</a>
+            <a href="/admin/leads" class="nav-item"><i class="bi bi-person-lines-fill"></i> Leads</a>
+            <a href="/admin/chat" class="nav-item active"><i class="bi bi-chat-dots"></i> Chat <span class="nav-chat-badge" id="sidebarBadge" style="display:none">0</span></a>
+            <a href="/admin/testimonials" class="nav-item"><i class="bi bi-images"></i> Testimonials</a>
+            <a href="/admin/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
+            <div class="nav-divider"></div>
+            <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
+            <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
+        </nav>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Main -->
+    <main class="admin-main">
+        <div class="admin-topbar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="topbar-toggle d-lg-none" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
+                <h5 class="mb-0" style="font-family:'Outfit',sans-serif;font-weight:800;">Live Chat</h5>
+            </div>
+            <div class="topbar-right d-flex align-items-center gap-3">
+                <span id="connectionStatus" style="color:#999;font-size:.78rem;"><i class="bi bi-circle-fill" style="color:#ccc;font-size:.5rem;"></i> Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Chat Stats Bar -->
+        <div class="chat-stats">
+            <div class="chat-stat-item">
+                <h4 id="statTotal">0</h4>
+                <small>Total Chats</small>
+            </div>
+            <div class="chat-stat-item">
+                <h4 id="statUnread">0</h4>
+                <small>Unread</small>
+            </div>
+            <div class="chat-stat-item">
+                <h4 id="statToday">0</h4>
+                <small>Today</small>
+            </div>
+        </div>
+
+        <!-- Chat Layout -->
+        <div class="chat-layout" id="chatLayout">
+            <!-- LEFT: Conversations List -->
+            <div class="chat-sidebar">
+                <div class="chat-search">
+                    <input type="text" id="convSearch" placeholder="Search conversations..." oninput="AdminChat.filterConversations()">
+                    <div class="chat-filters">
+                        <button class="chat-filter-btn active" data-filter="all" onclick="AdminChat.setFilter('all',this)">All</button>
+                        <button class="chat-filter-btn" data-filter="unread" onclick="AdminChat.setFilter('unread',this)">Unread</button>
+                        <button class="chat-filter-btn" data-filter="active" onclick="AdminChat.setFilter('active',this)">Active</button>
+                    </div>
+                </div>
+                <div class="conv-list" id="convList">
+                    <div class="chat-loading"><div class="spinner-border text-secondary" role="status"></div></div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Chat Window -->
+            <div class="chat-main" id="chatMain">
+                <div class="chat-empty" id="chatEmpty">
+                    <i class="bi bi-chat-square-text"></i>
+                    <p>Select a conversation</p>
+                    <small>Choose a chat from the left panel to start responding</small>
+                </div>
+
+                <!-- Active chat (hidden until selected) -->
+                <div id="activeChatView" style="display:none;flex-direction:column;flex:1">
+                    <div class="chat-header-bar">
+                        <div class="visitor-info">
+                            <button class="back-btn btn btn-sm btn-outline-secondary" onclick="AdminChat.backToList()" style="border-radius:8px;display:none;"><i class="bi bi-arrow-left"></i></button>
+                            <div>
+                                <h6 id="activeVisitorName">Visitor</h6>
+                                <span id="activeVisitorEmail">email@example.com</span>
+                                <span> · </span>
+                                <span id="activeVisitorPage" style="color:#ff6b00;font-weight:500;">/</span>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button class="resolve-btn" onclick="AdminChat.resolveChat()"><i class="bi bi-check-circle"></i> Resolve</button>
+                        </div>
+                    </div>
+
+                    <div class="admin-messages" id="adminMessages"></div>
+                    <div class="admin-typing" id="adminTyping"><i class="bi bi-three-dots"></i> Visitor is typing...</div>
+
+                    <div class="admin-input-area">
+                        <div class="quick-replies">
+                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Hello! 👋 How can I help you today?')">👋 Greeting</button>
+                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Sure! Let me get that information for you right away.')">📋 Info</button>
+                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Would you like to schedule a visit to see this truck in person?')">📅 Schedule</button>
+                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('For the best price, give us a call at +1 (201) 645-3364!')">📞 Call us</button>
+                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Thank you for chatting with us! Don\'t hesitate to reach out anytime. 🚛')">👏 Thanks</button>
+                        </div>
+                        <div class="admin-file-preview" id="adminFilePreview">
+                            <i class="bi bi-paperclip"></i>
+                            <span id="adminFileName"></span>
+                            <button onclick="AdminChat.clearFile()"><i class="bi bi-x"></i></button>
+                        </div>
+                        <div class="admin-input-row">
+                            <button class="admin-attach-btn" onclick="document.getElementById('adminFileInput').click()"><i class="bi bi-paperclip"></i></button>
+                            <textarea id="adminInput" rows="1" placeholder="Type your reply..." onkeydown="AdminChat.onKeyDown(event)" oninput="AdminChat.autoResize(this)"></textarea>
+                            <button class="admin-send-btn" id="adminSendBtn" onclick="AdminChat.send()" disabled><i class="bi bi-send-fill"></i></button>
+                        </div>
+                        <input type="file" id="adminFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*" onchange="AdminChat.onFileSelect(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Stream Chat SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.40.4/dist/browser.full-bundle.min.js"></script>
+    <script>
+    function toggleSidebar(){
+        document.getElementById('adminSidebar').classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show');
+    }
+
+    const AdminChat = (function() {
+        let client = null, activeChannel = null, channels = [], currentFilter = 'all';
+        let pendingFile = null, activeChannelId = null;
+
+        // Notification sound
+        let notifSound = null;
+        try {
+            notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3');
+        } catch(e) {}
+
+        const $ = id => document.getElementById(id);
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str || '';
+            return d.innerHTML;
+        }
+
+        function formatTime(d) {
+            if (!d) return '';
+            const date = new Date(d);
+            const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
+            if (isToday) return date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            return date.toLocaleDateString([], { month:'short', day:'numeric' }) + ' ' + date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        }
+
+        function getInitials(name) {
+            return (name || 'V').split(' ').map(w => w[0]).join('').toUpperCase().substring(0,2);
+        }
+
+        function renderConversationList() {
+            const list = $('convList');
+            const search = ($('convSearch').value || '').toLowerCase();
+            let filtered = channels;
+
+            if (search) {
+                filtered = filtered.filter(ch => {
+                    const name = (ch.data.visitor_name || '').toLowerCase();
+                    const email = (ch.data.visitor_email || '').toLowerCase();
+                    return name.includes(search) || email.includes(search);
+                });
+            }
+
+            if (currentFilter === 'unread') {
+                filtered = filtered.filter(ch => ch.countUnread() > 0);
+            }
+
+            // Update stats
+            let unreadTotal = 0, todayCount = 0;
+            const today = new Date().toDateString();
+            channels.forEach(ch => {
+                unreadTotal += ch.countUnread();
+                if (ch.data.created_at && new Date(ch.data.created_at).toDateString() === today) todayCount++;
+            });
+            $('statTotal').textContent = channels.length;
+            $('statUnread').textContent = unreadTotal;
+            $('statToday').textContent = todayCount;
+
+            // Update sidebar badge
+            const badge = $('sidebarBadge');
+            if (unreadTotal > 0) { badge.textContent = unreadTotal; badge.style.display = 'inline'; }
+            else { badge.style.display = 'none'; }
+
+            // Update favicon title
+            document.title = unreadTotal > 0 ? `(${unreadTotal}) Chat — ASAP Admin` : 'Chat — ASAP Admin';
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations found</p></div>';
+                return;
+            }
+
+            list.innerHTML = filtered.map(ch => {
+                const d = ch.data;
+                const name = d.visitor_name || 'Visitor';
+                const email = d.visitor_email || '';
+                const page = d.visitor_page || '/';
+                const lastMsg = ch.state.messages.length ? ch.state.messages[ch.state.messages.length - 1] : null;
+                const lastText = lastMsg ? (lastMsg.text || '📎 Attachment') : 'No messages yet';
+                const lastTime = lastMsg ? formatTime(lastMsg.created_at) : '';
+                const unread = ch.countUnread();
+                const isActive = ch.id === activeChannelId;
+
+                return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="AdminChat.selectConversation('${ch.id}')">
+                    <div class="conv-avatar">${getInitials(name)}<span class="online-dot" style="display:none"></span></div>
+                    <div class="conv-info">
+                        <div class="conv-name">${escapeHtml(name)} <span class="conv-email">${escapeHtml(email)}</span></div>
+                        <div class="conv-last-msg">${escapeHtml(lastText)}</div>
+                        <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${escapeHtml(page)}</div>
+                    </div>
+                    <div class="conv-meta">
+                        <span class="conv-time">${lastTime}</span>
+                        ${unread > 0 ? `<span class="conv-unread">${unread}</span>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderMessages() {
+            if (!activeChannel) return;
+            const el = $('adminMessages');
+            el.innerHTML = '';
+            activeChannel.state.messages.forEach(msg => {
+                const isAdmin = msg.user && msg.user.id === 'asap-admin';
+                const div = document.createElement('div');
+                div.className = 'admin-msg ' + (isAdmin ? 'from-admin' : 'from-visitor');
+
+                let content = '';
+                if (msg.text) content += `<span>${escapeHtml(msg.text)}</span>`;
+                if (msg.attachments && msg.attachments.length) {
+                    msg.attachments.forEach(att => {
+                        if (att.type === 'image') {
+                            content += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="image" onclick="window.open(this.src,'_blank')">`;
+                        } else {
+                            content += `<a class="file-link" href="${att.asset_url || '#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${escapeHtml(att.title || att.name || 'File')}</a>`;
+                        }
+                    });
+                }
+                div.innerHTML = `<div class="msg-bubble">${content}</div><div class="msg-meta">${formatTime(msg.created_at)}</div>`;
+                el.appendChild(div);
+            });
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function connectAdmin() {
+            try {
+                const res = await fetch('/api/chat/admin-token');
+                if (!res.ok) throw new Error('Token failed');
+                const data = await res.json();
+
+                client = new StreamChat.StreamChat(data.api_key);
+                await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
+
+                $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
+
+                // Load channels
+                const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
+                const sort = [{ field: 'last_message_at', direction: -1 }];
+                channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
+
+                renderConversationList();
+
+                // Listen for new messages across all channels
+                client.on('message.new', event => {
+                    renderConversationList();
+                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
+                        renderMessages();
+                    }
+                    // Notification
+                    if (event.user.id !== 'asap-admin') {
+                        if (notifSound) try { notifSound.play(); } catch(e) {}
+                        // Browser notification
+                        if (Notification.permission === 'granted' && document.hidden) {
+                            new Notification('New message from ' + (event.user.name || 'Visitor'), {
+                                body: event.message.text || '📎 Attachment',
+                                icon: '/assets/img/logo/logo.jpg'
+                            });
+                        }
+                    }
+                });
+
+                // Typing indicators
+                client.on('typing.start', event => {
+                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
+                        $('adminTyping').style.display = 'block';
+                    }
+                });
+                client.on('typing.stop', event => {
+                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
+                        $('adminTyping').style.display = 'none';
+                    }
+                });
+
+                // Request notification permission
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+
+            } catch (err) {
+                console.error('Admin chat connect error:', err);
+                $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Disconnected';
+                $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Unable to connect to chat</p><small>Check your Stream Chat configuration</small></div>';
+            }
+        }
+
+        return {
+            async selectConversation(channelId) {
+                activeChannelId = channelId;
+                activeChannel = channels.find(ch => ch.id === channelId);
+                if (!activeChannel) return;
+
+                // Update UI
+                $('chatEmpty').style.display = 'none';
+                $('activeChatView').style.display = 'flex';
+
+                const d = activeChannel.data;
+                $('activeVisitorName').textContent = d.visitor_name || 'Visitor';
+                $('activeVisitorEmail').textContent = d.visitor_email || '';
+                $('activeVisitorPage').textContent = d.visitor_page || '/';
+
+                renderMessages();
+                renderConversationList();
+
+                // Mark as read
+                try { await activeChannel.markRead(); } catch(e) {}
+                setTimeout(() => renderConversationList(), 500);
+
+                // Mobile: show chat
+                $('chatLayout').classList.add('conv-open');
+            },
+
+            backToList() {
+                $('chatLayout').classList.remove('conv-open');
+                activeChannelId = null;
+            },
+
+            filterConversations() { renderConversationList(); },
+
+            setFilter(filter, el) {
+                currentFilter = filter;
+                document.querySelectorAll('.chat-filter-btn').forEach(b => b.classList.remove('active'));
+                el.classList.add('active');
+                renderConversationList();
+            },
+
+            async send() {
+                const input = $('adminInput');
+                const text = input.value.trim();
+                if (!text && !pendingFile) return;
+                if (!activeChannel) return;
+
+                $('adminSendBtn').disabled = true;
+
+                try {
+                    let attachments = [];
+                    if (pendingFile) {
+                        if (pendingFile.size > 10 * 1024 * 1024) {
+                            alert('File must be under 10MB');
+                            $('adminSendBtn').disabled = false;
+                            return;
+                        }
+                        const resp = await activeChannel.sendFile(pendingFile);
+                        const isImage = pendingFile.type.startsWith('image/');
+                        attachments.push({
+                            type: isImage ? 'image' : 'file',
+                            [isImage ? 'image_url' : 'asset_url']: resp.file,
+                            title: pendingFile.name,
+                            name: pendingFile.name,
+                        });
+                        this.clearFile();
+                    }
+                    await activeChannel.sendMessage({ text: text || undefined, attachments });
+                    input.value = '';
+                    input.style.height = 'auto';
+                    renderMessages();
+                } catch(err) {
+                    console.error('Send error:', err);
+                    alert('Failed to send message');
+                } finally {
+                    $('adminSendBtn').disabled = false;
+                }
+            },
+
+            quickReply(text) {
+                $('adminInput').value = text;
+                $('adminSendBtn').disabled = false;
+                $('adminInput').focus();
+            },
+
+            onKeyDown(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
+                if (activeChannel && e.key !== 'Enter') try { activeChannel.keystroke(); } catch(err) {}
+                setTimeout(() => { $('adminSendBtn').disabled = !$('adminInput').value.trim() && !pendingFile; }, 10);
+            },
+
+            autoResize(el) {
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+                $('adminSendBtn').disabled = !el.value.trim() && !pendingFile;
+            },
+
+            onFileSelect(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 10 * 1024 * 1024) { alert('File must be under 10MB'); return; }
+                pendingFile = file;
+                $('adminFileName').textContent = file.name;
+                $('adminFilePreview').style.display = 'flex';
+                $('adminSendBtn').disabled = false;
+            },
+
+            clearFile() {
+                pendingFile = null;
+                $('adminFileInput').value = '';
+                $('adminFilePreview').style.display = 'none';
+                $('adminSendBtn').disabled = !$('adminInput').value.trim();
+            },
+
+            async resolveChat() {
+                if (!activeChannel) return;
+                if (!confirm('Mark this conversation as resolved?')) return;
+                try {
+                    await activeChannel.sendMessage({ text: '✅ This conversation has been resolved. Thank you!' });
+                    renderMessages();
+                } catch(e) { console.error(e); }
+            }
+        };
+    })();
+
+    // Initialize
+    AdminChat.init = () => {};
+    document.addEventListener('DOMContentLoaded', () => {
+        // Start connection
+        (async () => {
+            const ConnectAdmin = AdminChat.__proto__ || {};
+            // Direct call to connect
+            try {
+                const res = await fetch('/api/chat/admin-token');
+                if (!res.ok) throw new Error('Token failed');
+                const data = await res.json();
+
+                const client = new StreamChat.StreamChat(data.api_key);
+                await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
+
+                document.getElementById('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
+
+                const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
+                const sort = [{ field: 'last_message_at', direction: -1 }];
+                const channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
+
+                // Expose to AdminChat
+                AdminChat._client = client;
+                AdminChat._channels = channels;
+
+                // Render list
+                const convList = document.getElementById('convList');
+                const searchEl = document.getElementById('convSearch');
+
+                function getInitials(name) { return (name||'V').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2); }
+                function fmtTime(d) {
+                    if(!d)return '';
+                    const date=new Date(d),now=new Date();
+                    if(date.toDateString()===now.toDateString()) return date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+                    return date.toLocaleDateString([],{month:'short',day:'numeric'})+' '+date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+                }
+                function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
+
+                let currentFilter = 'all', activeChannel = null, activeChannelId = null, pendingFile = null;
+                let notifSound = null;
+                try { notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3'); } catch(e) {}
+
+                function renderList() {
+                    const search = (searchEl.value||'').toLowerCase();
+                    let filtered = channels;
+                    if (search) filtered = filtered.filter(ch => {
+                        const n=(ch.data.visitor_name||'').toLowerCase(), e=(ch.data.visitor_email||'').toLowerCase();
+                        return n.includes(search)||e.includes(search);
+                    });
+                    if (currentFilter==='unread') filtered = filtered.filter(ch=>ch.countUnread()>0);
+
+                    let unreadTotal=0, todayCount=0;
+                    const today = new Date().toDateString();
+                    channels.forEach(ch=>{
+                        unreadTotal+=ch.countUnread();
+                        if(ch.data.created_at&&new Date(ch.data.created_at).toDateString()===today)todayCount++;
+                    });
+                    document.getElementById('statTotal').textContent=channels.length;
+                    document.getElementById('statUnread').textContent=unreadTotal;
+                    document.getElementById('statToday').textContent=todayCount;
+                    const badge=document.getElementById('sidebarBadge');
+                    if(unreadTotal>0){badge.textContent=unreadTotal;badge.style.display='inline';}else{badge.style.display='none';}
+                    document.title=unreadTotal>0?`(${unreadTotal}) Chat — ASAP Admin`:'Chat — ASAP Admin';
+
+                    if(!filtered.length){
+                        convList.innerHTML='<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations</p></div>';
+                        return;
+                    }
+                    convList.innerHTML=filtered.map(ch=>{
+                        const d=ch.data,name=d.visitor_name||'Visitor',email=d.visitor_email||'',page=d.visitor_page||'/';
+                        const lm=ch.state.messages.length?ch.state.messages[ch.state.messages.length-1]:null;
+                        const lt=lm?(lm.text||'📎 Attachment'):'No messages';
+                        const t=lm?fmtTime(lm.created_at):'';
+                        const u=ch.countUnread();
+                        const act=ch.id===activeChannelId;
+                        return `<div class="conv-item ${act?'active':''}" onclick="AdminChat.selectConv('${ch.id}')">
+                            <div class="conv-avatar">${getInitials(name)}</div>
+                            <div class="conv-info">
+                                <div class="conv-name">${esc(name)} <span class="conv-email">${esc(email)}</span></div>
+                                <div class="conv-last-msg">${esc(lt)}</div>
+                                <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${esc(page)}</div>
+                            </div>
+                            <div class="conv-meta"><span class="conv-time">${t}</span>${u>0?`<span class="conv-unread">${u}</span>`:''}</div>
+                        </div>`;
+                    }).join('');
+                }
+
+                function renderMsgs() {
+                    if(!activeChannel)return;
+                    const el=document.getElementById('adminMessages');
+                    el.innerHTML='';
+                    activeChannel.state.messages.forEach(msg=>{
+                        const isA=msg.user&&msg.user.id==='asap-admin';
+                        const d=document.createElement('div');
+                        d.className='admin-msg '+(isA?'from-admin':'from-visitor');
+                        let c='';
+                        if(msg.text)c+=`<span>${esc(msg.text)}</span>`;
+                        if(msg.attachments&&msg.attachments.length){
+                            msg.attachments.forEach(att=>{
+                                if(att.type==='image')c+=`<img src="${att.image_url||att.thumb_url||att.asset_url}" alt="" onclick="window.open(this.src,'_blank')">`;
+                                else c+=`<a class="file-link" href="${att.asset_url||'#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${esc(att.title||att.name||'File')}</a>`;
+                            });
+                        }
+                        d.innerHTML=`<div class="msg-bubble">${c}</div><div class="msg-meta">${fmtTime(msg.created_at)}</div>`;
+                        el.appendChild(d);
+                    });
+                    el.scrollTop=el.scrollHeight;
+                }
+
+                // Event listeners
+                client.on('message.new', event=>{
+                    renderList();
+                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')renderMsgs();
+                    if(event.user.id!=='asap-admin'){
+                        if(notifSound)try{notifSound.play();}catch(e){}
+                        if(Notification.permission==='granted'&&document.hidden){
+                            new Notification('New message from '+(event.user.name||'Visitor'),{body:event.message.text||'📎',icon:'/assets/img/logo/logo.jpg'});
+                        }
+                    }
+                });
+                client.on('typing.start',event=>{
+                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')
+                        document.getElementById('adminTyping').style.display='block';
+                });
+                client.on('typing.stop',event=>{
+                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')
+                        document.getElementById('adminTyping').style.display='none';
+                });
+
+                if(Notification.permission==='default')Notification.requestPermission();
+
+                renderList();
+                searchEl.oninput=()=>renderList();
+
+                // Expose methods
+                AdminChat.selectConv = async function(id) {
+                    activeChannelId=id;
+                    activeChannel=channels.find(ch=>ch.id===id);
+                    if(!activeChannel)return;
+                    document.getElementById('chatEmpty').style.display='none';
+                    document.getElementById('activeChatView').style.display='flex';
+                    document.getElementById('activeVisitorName').textContent=activeChannel.data.visitor_name||'Visitor';
+                    document.getElementById('activeVisitorEmail').textContent=activeChannel.data.visitor_email||'';
+                    document.getElementById('activeVisitorPage').textContent=activeChannel.data.visitor_page||'/';
+                    renderMsgs();
+                    renderList();
+                    try{await activeChannel.markRead();}catch(e){}
+                    setTimeout(renderList,500);
+                    document.getElementById('chatLayout').classList.add('conv-open');
+                };
+                AdminChat.backToList = function(){
+                    document.getElementById('chatLayout').classList.remove('conv-open');
+                    activeChannelId=null;
+                };
+                AdminChat.setFilter = function(f,el){
+                    currentFilter=f;
+                    document.querySelectorAll('.chat-filter-btn').forEach(b=>b.classList.remove('active'));
+                    el.classList.add('active');
+                    renderList();
+                };
+                AdminChat.send = async function(){
+                    const input=document.getElementById('adminInput');
+                    const text=input.value.trim();
+                    if(!text&&!pendingFile)return;
+                    if(!activeChannel)return;
+                    document.getElementById('adminSendBtn').disabled=true;
+                    try{
+                        let att=[];
+                        if(pendingFile){
+                            if(pendingFile.size>10*1024*1024){alert('File must be under 10MB');document.getElementById('adminSendBtn').disabled=false;return;}
+                            const r=await activeChannel.sendFile(pendingFile);
+                            const isImg=pendingFile.type.startsWith('image/');
+                            att.push({type:isImg?'image':'file',[isImg?'image_url':'asset_url']:r.file,title:pendingFile.name,name:pendingFile.name});
+                            AdminChat.clearFile();
+                        }
+                        await activeChannel.sendMessage({text:text||undefined,attachments:att});
+                        input.value='';input.style.height='auto';
+                        renderMsgs();
+                    }catch(e){console.error(e);alert('Send failed');}
+                    finally{document.getElementById('adminSendBtn').disabled=false;}
+                };
+                AdminChat.quickReply = function(text){
+                    document.getElementById('adminInput').value=text;
+                    document.getElementById('adminSendBtn').disabled=false;
+                    document.getElementById('adminInput').focus();
+                };
+                AdminChat.onKeyDown = function(e){
+                    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();AdminChat.send();}
+                    if(activeChannel&&e.key!=='Enter')try{activeChannel.keystroke();}catch(e){}
+                    setTimeout(()=>{document.getElementById('adminSendBtn').disabled=!document.getElementById('adminInput').value.trim()&&!pendingFile;},10);
+                };
+                AdminChat.autoResize = function(el){
+                    el.style.height='auto';
+                    el.style.height=Math.min(el.scrollHeight,80)+'px';
+                    document.getElementById('adminSendBtn').disabled=!el.value.trim()&&!pendingFile;
+                };
+                AdminChat.onFileSelect = function(e){
+                    const file=e.target.files[0];
+                    if(!file)return;
+                    if(file.size>10*1024*1024){alert('Max 10MB');return;}
+                    pendingFile=file;
+                    document.getElementById('adminFileName').textContent=file.name;
+                    document.getElementById('adminFilePreview').style.display='flex';
+                    document.getElementById('adminSendBtn').disabled=false;
+                };
+                AdminChat.clearFile = function(){
+                    pendingFile=null;
+                    document.getElementById('adminFileInput').value='';
+                    document.getElementById('adminFilePreview').style.display='none';
+                    document.getElementById('adminSendBtn').disabled=!document.getElementById('adminInput').value.trim();
+                };
+                AdminChat.resolveChat = async function(){
+                    if(!activeChannel)return;
+                    if(!confirm('Mark as resolved?'))return;
+                    try{
+                        await activeChannel.sendMessage({text:'✅ This conversation has been resolved. Thank you!'});
+                        renderMsgs();
+                    }catch(e){console.error(e);}
+                };
+                AdminChat.filterConversations = renderList;
+
+            } catch(err) {
+                console.error('Admin chat error:', err);
+                document.getElementById('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Error';
+                document.getElementById('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Connection failed</p><small>Verify Stream API keys in environment</small></div>';
+            }
+        })();
+    });
+    </script>
+</body>
+</html>

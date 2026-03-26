@@ -317,6 +317,437 @@
             animation: wa-pulse 2s infinite;
         }
     </style>
+
+    <!-- ═══ CHAT WIDGET ═══ -->
+    {% if not request.url.path.startswith('/admin') %}
+    <style>
+    /* ─── Chat Widget Styles ─── */
+    #chatWidget{position:fixed;bottom:24px;right:24px;z-index:10000;font-family:'Inter',sans-serif}
+    #chatBtn{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff8c33);border:none;color:#fff;font-size:1.6rem;cursor:pointer;box-shadow:0 4px 20px rgba(255,107,0,.4);transition:all .3s cubic-bezier(.4,0,.2,1);display:flex;align-items:center;justify-content:center;position:relative}
+    #chatBtn:hover{transform:scale(1.08);box-shadow:0 6px 28px rgba(255,107,0,.5)}
+    #chatBtn .badge-dot{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:#dc3545;color:#fff;font-size:.65rem;font-weight:700;display:none;align-items:center;justify-content:center;border:2px solid #fff}
+    @keyframes chat-pulse{0%,100%{box-shadow:0 4px 20px rgba(255,107,0,.4)}50%{box-shadow:0 4px 30px rgba(255,107,0,.65)}}
+    #chatBtn{animation:chat-pulse 2.5s infinite}
+    #chatBtn.open{animation:none;background:#1a1a2e}
+
+    #chatWindow{position:absolute;bottom:72px;right:0;width:380px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 120px);background:#fff;border-radius:20px;box-shadow:0 12px 48px rgba(0,0,0,.15);display:none;flex-direction:column;overflow:hidden;transform:scale(.9) translateY(20px);opacity:0;transition:all .3s cubic-bezier(.4,0,.2,1)}
+    #chatWindow.show{display:flex;transform:scale(1) translateY(0);opacity:1}
+
+    .chat-header{background:linear-gradient(135deg,#ff6b00,#ff8c33);padding:18px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+    .chat-header-info{display:flex;align-items:center;gap:12px}
+    .chat-header-avatar{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+    .chat-header-text h6{margin:0;font-weight:700;font-size:.95rem;font-family:'Outfit',sans-serif}
+    .chat-header-text span{font-size:.75rem;opacity:.85;display:flex;align-items:center;gap:4px}
+    .chat-header-text span .status-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block}
+    .chat-header-actions{display:flex;gap:6px}
+    .chat-header-actions button{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:8px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;transition:background .2s}
+    .chat-header-actions button:hover{background:rgba(255,255,255,.3)}
+
+    .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:#f8f9fa}
+    .chat-messages::-webkit-scrollbar{width:4px}
+    .chat-messages::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px}
+
+    .chat-msg{max-width:82%;display:flex;flex-direction:column;animation:msg-in .3s ease}
+    .chat-msg.visitor{align-self:flex-end}
+    .chat-msg.admin{align-self:flex-start}
+    .chat-msg .bubble{padding:10px 14px;border-radius:16px;font-size:.88rem;line-height:1.5;word-wrap:break-word}
+    .chat-msg.visitor .bubble{background:#ff6b00;color:#fff;border-bottom-right-radius:4px}
+    .chat-msg.admin .bubble{background:#fff;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .chat-msg .meta{font-size:.68rem;color:#999;margin-top:3px;display:flex;align-items:center;gap:4px}
+    .chat-msg.visitor .meta{justify-content:flex-end}
+    .chat-msg .bubble img{max-width:100%;border-radius:8px;margin-top:4px;cursor:pointer}
+    .chat-msg .bubble .file-attach{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(0,0,0,.05);border-radius:8px;margin-top:4px;text-decoration:none;color:inherit;font-size:.82rem;font-weight:500}
+    .chat-msg.visitor .bubble .file-attach{background:rgba(255,255,255,.15);color:#fff}
+    @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+    .chat-typing{display:none;align-self:flex-start;padding:6px 14px;color:#999;font-size:.78rem;font-style:italic}
+
+    .chat-input-area{border-top:1px solid #eee;padding:12px 16px;background:#fff;flex-shrink:0;display:flex;flex-direction:column;gap:8px}
+    .chat-input-row{display:flex;gap:8px;align-items:flex-end}
+    .chat-input-row textarea{flex:1;border:1px solid #e5e5e5;border-radius:12px;padding:10px 14px;font-size:.88rem;font-family:'Inter',sans-serif;resize:none;max-height:80px;min-height:40px;outline:none;transition:border-color .2s}
+    .chat-input-row textarea:focus{border-color:#ff6b00}
+    .chat-input-row button{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+    .chat-send-btn{background:#ff6b00;color:#fff;font-size:1rem}
+    .chat-send-btn:hover{background:#e05e00;transform:scale(1.05)}
+    .chat-send-btn:disabled{background:#ccc;cursor:not-allowed;transform:none}
+    .chat-attach-btn{background:#f0f0f0;color:#666;font-size:.9rem}
+    .chat-attach-btn:hover{background:#e5e5e5}
+    .chat-emoji-btn{background:#f0f0f0;color:#666;font-size:1rem}
+    .chat-emoji-btn:hover{background:#e5e5e5}
+
+    .chat-file-preview{display:none;padding:4px 8px;background:#f0f0f0;border-radius:8px;font-size:.78rem;align-items:center;gap:6px}
+    .chat-file-preview span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .chat-file-preview button{background:none;border:none;color:#999;cursor:pointer;font-size:.85rem}
+
+    .emoji-picker{display:none;position:absolute;bottom:70px;right:56px;background:#fff;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.12);padding:8px;width:260px;max-height:180px;overflow-y:auto;z-index:10}
+    .emoji-picker span{cursor:pointer;font-size:1.3rem;padding:4px;display:inline-block;border-radius:4px;transition:background .2s}
+    .emoji-picker span:hover{background:#f0f0f0}
+
+    /* Welcome Form */
+    .chat-welcome{padding:30px 24px;display:flex;flex-direction:column;justify-content:center;flex:1;text-align:center}
+    .chat-welcome h5{font-family:'Outfit',sans-serif;font-weight:800;color:#1a1a2e;margin-bottom:6px}
+    .chat-welcome p{color:#777;font-size:.88rem;margin-bottom:20px}
+    .chat-welcome input{width:100%;padding:12px 16px;border:1px solid #e5e5e5;border-radius:10px;font-size:.9rem;margin-bottom:10px;outline:none;font-family:'Inter',sans-serif;transition:border-color .2s}
+    .chat-welcome input:focus{border-color:#ff6b00;box-shadow:0 0 0 3px rgba(255,107,0,.1)}
+    .chat-welcome button{width:100%;padding:13px;border:none;border-radius:10px;background:linear-gradient(135deg,#ff6b00,#ff8c33);color:#fff;font-weight:700;font-size:.95rem;cursor:pointer;transition:all .3s;margin-top:4px}
+    .chat-welcome button:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,107,0,.35)}
+    .chat-welcome button:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
+
+    .chat-error{background:#fef2f2;color:#dc3545;padding:10px 14px;border-radius:10px;font-size:.82rem;text-align:center;margin:12px 16px;display:none}
+
+    @media(max-width:480px){
+        #chatWindow{width:100vw;max-width:100vw;height:100vh;max-height:100vh;bottom:0;right:0;border-radius:0}
+        #chatBtn{width:52px;height:52px;font-size:1.3rem}
+    }
+    </style>
+
+    <div id="chatWidget">
+        <div id="chatWindow">
+            <div class="chat-header">
+                <div class="chat-header-info">
+                    <div class="chat-header-avatar"><i class="bi bi-headset"></i></div>
+                    <div class="chat-header-text">
+                        <h6>ASAP Support</h6>
+                        <span><span class="status-dot"></span> We typically reply instantly</span>
+                    </div>
+                </div>
+                <div class="chat-header-actions">
+                    <button onclick="ASAP_Chat.minimize()" title="Minimize"><i class="bi bi-dash-lg"></i></button>
+                    <button onclick="ASAP_Chat.close()" title="Close"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+
+            <div class="chat-error" id="chatError"></div>
+
+            <!-- Welcome Form -->
+            <div class="chat-welcome" id="chatWelcome">
+                <h5>👋 Hey there!</h5>
+                <p>We're here to help. Enter your info to start chatting.</p>
+                <input type="text" id="chatName" placeholder="Your name" autocomplete="name">
+                <input type="email" id="chatEmail" placeholder="Your email" autocomplete="email">
+                <button id="chatStartBtn" onclick="ASAP_Chat.startChat()">Start Chat</button>
+            </div>
+
+            <!-- Messages Area (hidden until connected) -->
+            <div class="chat-messages" id="chatMessages" style="display:none"></div>
+            <div class="chat-typing" id="chatTyping"><i class="bi bi-three-dots"></i> ASAP Support is typing...</div>
+
+            <!-- Input Area (hidden until connected) -->
+            <div class="chat-input-area" id="chatInputArea" style="display:none">
+                <div class="chat-file-preview" id="chatFilePreview">
+                    <i class="bi bi-paperclip"></i>
+                    <span id="chatFileName"></span>
+                    <button onclick="ASAP_Chat.clearFile()"><i class="bi bi-x"></i></button>
+                </div>
+                <div class="chat-input-row">
+                    <button class="chat-emoji-btn" onclick="ASAP_Chat.toggleEmoji()" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
+                    <button class="chat-attach-btn" onclick="document.getElementById('chatFileInput').click()" title="Attach file"><i class="bi bi-paperclip"></i></button>
+                    <textarea id="chatInput" rows="1" placeholder="Type a message..." onkeydown="ASAP_Chat.onKeyDown(event)" oninput="ASAP_Chat.autoResize(this)"></textarea>
+                    <button class="chat-send-btn" id="chatSendBtn" onclick="ASAP_Chat.send()" disabled><i class="bi bi-send-fill"></i></button>
+                </div>
+                <input type="file" id="chatFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*" onchange="ASAP_Chat.onFileSelect(event)">
+            </div>
+
+            <div class="emoji-picker" id="emojiPicker"></div>
+        </div>
+
+        <button id="chatBtn" onclick="ASAP_Chat.toggle()">
+            <i class="bi bi-chat-dots-fill" id="chatBtnIcon"></i>
+            <span class="badge-dot" id="chatBadge">0</span>
+        </button>
+    </div>
+
+    <!-- Stream Chat SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.40.4/dist/browser.full-bundle.min.js"></script>
+    <script>
+    const ASAP_Chat = (function() {
+        let client = null, channel = null, visitorId = '', isOpen = false, isConnected = false;
+        let pendingFile = null, unreadCount = 0;
+
+        const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','👋','🙏','😍','🤝','💯','⭐','🚛','🚚','💰','✅','❌','📸','📎','⏰','🎯','💬','👏','🙌','😎','🤔','📞','📧'];
+
+        // Notification sound (tiny base64-encoded beep)
+        let notifSound = null;
+        try {
+            notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3');
+        } catch(e) {}
+
+        function $(id) { return document.getElementById(id); }
+
+        function showError(msg) {
+            const el = $('chatError');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function formatTime(d) {
+            const date = new Date(d);
+            return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderMessage(msg) {
+            const isVisitor = msg.user && msg.user.id !== 'asap-admin';
+            const div = document.createElement('div');
+            div.className = 'chat-msg ' + (isVisitor ? 'visitor' : 'admin');
+
+            let content = '';
+            if (msg.text) content += `<span>${escapeHtml(msg.text)}</span>`;
+            if (msg.attachments && msg.attachments.length) {
+                msg.attachments.forEach(att => {
+                    if (att.type === 'image') {
+                        content += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="image" onclick="window.open(this.src,'_blank')">`;
+                    } else {
+                        const name = att.title || att.name || 'File';
+                        const url = att.asset_url || '#';
+                        content += `<a class="file-attach" href="${url}" target="_blank"><i class="bi bi-file-earmark"></i> ${escapeHtml(name)}</a>`;
+                    }
+                });
+            }
+
+            const readIcon = isVisitor ? (msg.readByAdmin ? '✓✓' : '✓') : '';
+            div.innerHTML = `<div class="bubble">${content}</div><div class="meta">${formatTime(msg.created_at)}${readIcon ? ' &nbsp;' + readIcon : ''}</div>`;
+
+            $('chatMessages').appendChild(div);
+            $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str;
+            return d.innerHTML;
+        }
+
+        function buildEmojiPicker() {
+            const picker = $('emojiPicker');
+            picker.innerHTML = EMOJIS.map(e => `<span onclick="ASAP_Chat.insertEmoji('${e}')">${e}</span>`).join('');
+        }
+
+        async function initStreamClient(apiKey, token, userId) {
+            client = new StreamChat.StreamChat(apiKey);
+            await client.connectUser({ id: userId }, token);
+            isConnected = true;
+        }
+
+        async function joinChannel(channelId) {
+            channel = client.channel('messaging', channelId);
+            await channel.watch();
+
+            // Load existing messages
+            const state = channel.state.messages;
+            state.forEach(m => renderMessage(m));
+
+            // Listen for new messages
+            channel.on('message.new', event => {
+                if (event.user.id === visitorId) return; // Skip own messages already shown
+                renderMessage(event.message);
+                if (!isOpen) {
+                    unreadCount++;
+                    $('chatBadge').textContent = unreadCount;
+                    $('chatBadge').style.display = 'flex';
+                    if (notifSound) try { notifSound.play(); } catch(e) {}
+                }
+            });
+
+            // Typing indicators
+            channel.on('typing.start', event => {
+                if (event.user.id !== visitorId) {
+                    $('chatTyping').style.display = 'block';
+                }
+            });
+            channel.on('typing.stop', event => {
+                if (event.user.id !== visitorId) {
+                    $('chatTyping').style.display = 'none';
+                }
+            });
+        }
+
+        return {
+            toggle() {
+                isOpen ? this.close() : this.open();
+            },
+            open() {
+                $('chatWindow').classList.add('show');
+                $('chatBtn').classList.add('open');
+                $('chatBtnIcon').className = 'bi bi-x-lg';
+                isOpen = true;
+                unreadCount = 0;
+                $('chatBadge').style.display = 'none';
+
+                // Restore saved visitor info
+                const saved = localStorage.getItem('asap_chat_visitor');
+                if (saved && !isConnected) {
+                    const v = JSON.parse(saved);
+                    $('chatName').value = v.name || '';
+                    $('chatEmail').value = v.email || '';
+                    if (v.name && v.email && v.connected) {
+                        this.startChat();
+                    }
+                }
+            },
+            close() {
+                $('chatWindow').classList.remove('show');
+                $('chatBtn').classList.remove('open');
+                $('chatBtnIcon').className = 'bi bi-chat-dots-fill';
+                isOpen = false;
+            },
+            minimize() {
+                this.close();
+            },
+            async startChat() {
+                const name = $('chatName').value.trim();
+                const email = $('chatEmail').value.trim();
+                if (!name || !email) { showError('Please enter your name and email'); return; }
+                if (!/\S+@\S+\.\S+/.test(email)) { showError('Please enter a valid email'); return; }
+
+                const btn = $('chatStartBtn');
+                btn.disabled = true;
+                btn.textContent = 'Connecting...';
+
+                try {
+                    // Get token
+                    const tokenRes = await fetch('/api/chat/token', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, email, page: window.location.pathname })
+                    });
+                    if (!tokenRes.ok) throw new Error('Token request failed');
+                    const tokenData = await tokenRes.json();
+
+                    visitorId = tokenData.visitor_id;
+
+                    // Create channel
+                    const chRes = await fetch('/api/chat/channel', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ visitor_id: visitorId, name, email, page: window.location.pathname })
+                    });
+                    if (!chRes.ok) throw new Error('Channel creation failed');
+                    const chData = await chRes.json();
+
+                    // Connect to Stream
+                    await initStreamClient(tokenData.api_key, tokenData.token, visitorId);
+                    await joinChannel(chData.channel_id);
+
+                    // Show chat UI
+                    $('chatWelcome').style.display = 'none';
+                    $('chatMessages').style.display = 'flex';
+                    $('chatInputArea').style.display = 'block';
+                    $('chatInput').focus();
+                    buildEmojiPicker();
+
+                    // Send welcome message if channel is new
+                    if (chData.created) {
+                        await channel.sendMessage({ text: `Hi! I'm ${name}. I'm browsing ${window.location.pathname}` });
+                    }
+
+                    localStorage.setItem('asap_chat_visitor', JSON.stringify({ name, email, connected: true }));
+
+                } catch (err) {
+                    console.error('Chat init error:', err);
+                    showError('Unable to connect. Please try again later.');
+                    btn.disabled = false;
+                    btn.textContent = 'Start Chat';
+                }
+            },
+            async send() {
+                const input = $('chatInput');
+                const text = input.value.trim();
+                const fileInput = $('chatFileInput');
+
+                if (!text && !pendingFile) return;
+                if (!channel) return;
+
+                $('chatSendBtn').disabled = true;
+
+                try {
+                    let attachments = [];
+                    if (pendingFile) {
+                        // Validate file
+                        if (pendingFile.size > 10 * 1024 * 1024) {
+                            showError('File must be under 10MB');
+                            $('chatSendBtn').disabled = false;
+                            return;
+                        }
+                        const resp = await channel.sendFile(pendingFile);
+                        const isImage = pendingFile.type.startsWith('image/');
+                        attachments.push({
+                            type: isImage ? 'image' : 'file',
+                            [isImage ? 'image_url' : 'asset_url']: resp.file,
+                            title: pendingFile.name,
+                            name: pendingFile.name,
+                        });
+                        this.clearFile();
+                    }
+
+                    const msg = await channel.sendMessage({ text: text || undefined, attachments });
+                    renderMessage(msg.message);
+
+                    input.value = '';
+                    input.style.height = 'auto';
+                } catch (err) {
+                    console.error('Send error:', err);
+                    showError('Message failed to send');
+                } finally {
+                    $('chatSendBtn').disabled = false;
+                }
+            },
+            onKeyDown(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.send();
+                }
+                // Send typing indicator
+                if (channel && e.key !== 'Enter') {
+                    try { channel.keystroke(); } catch(err) {}
+                }
+                // Enable/disable send button
+                setTimeout(() => {
+                    $('chatSendBtn').disabled = !$('chatInput').value.trim() && !pendingFile;
+                }, 10);
+            },
+            autoResize(el) {
+                el.style.height = 'auto';
+                el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+                $('chatSendBtn').disabled = !el.value.trim() && !pendingFile;
+            },
+            onFileSelect(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 10 * 1024 * 1024) { showError('File must be under 10MB'); return; }
+                pendingFile = file;
+                $('chatFileName').textContent = file.name;
+                $('chatFilePreview').style.display = 'flex';
+                $('chatSendBtn').disabled = false;
+            },
+            clearFile() {
+                pendingFile = null;
+                $('chatFileInput').value = '';
+                $('chatFilePreview').style.display = 'none';
+                $('chatSendBtn').disabled = !$('chatInput').value.trim();
+            },
+            toggleEmoji() {
+                const p = $('emojiPicker');
+                p.style.display = p.style.display === 'block' ? 'none' : 'block';
+            },
+            insertEmoji(emoji) {
+                $('chatInput').value += emoji;
+                $('emojiPicker').style.display = 'none';
+                $('chatInput').focus();
+                $('chatSendBtn').disabled = false;
+            }
+        };
+    })();
+
+    // Close emoji picker on outside click
+    document.addEventListener('click', function(e) {
+        const picker = document.getElementById('emojiPicker');
+        if (picker && !e.target.closest('.chat-emoji-btn') && !e.target.closest('.emoji-picker')) {
+            picker.style.display = 'none';
+        }
+    });
+    </script>
+    {% endif %}
 </body>
 
 </html>

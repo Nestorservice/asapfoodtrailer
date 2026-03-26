@@ -526,6 +526,69 @@ class DatabaseService:
             self._cache_invalidate("settings")
             return settings_data
 
+    # ─── Chat Sessions ────────────────────────────────────────
+
+    def save_chat_session(self, session_data: dict) -> dict:
+        """Save a visitor chat session to Firestore."""
+        session_data.setdefault("id", str(uuid.uuid4()))
+        session_data["created_at"] = datetime.now(timezone.utc).isoformat()
+        session_data.setdefault("status", "active")
+
+        if self.mode == "local":
+            data = self._load_local_data()
+            data.setdefault("chat_sessions", []).append(session_data)
+            self._save_local_data()
+        else:
+            self.db.collection("chat_sessions").document(session_data["id"]).set(
+                session_data
+            )
+            self._cache_invalidate("chat_sessions")
+        return session_data
+
+    def get_chat_sessions(self) -> list:
+        """Get all chat sessions."""
+        if self.mode == "local":
+            data = self._load_local_data()
+            return data.get("chat_sessions", [])
+        else:
+            cache_key = "chat_sessions"
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
+            try:
+                docs = (
+                    self.db.collection("chat_sessions")
+                    .order_by("created_at", direction="DESCENDING")
+                    .stream()
+                )
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_chat_sessions failed: {e}")
+                return []
+
+    def update_chat_session(self, session_id: str, update_data: dict) -> dict:
+        """Update a chat session (e.g. mark as resolved/archived)."""
+        if self.mode == "local":
+            data = self._load_local_data()
+            for s in data.get("chat_sessions", []):
+                if s.get("id") == session_id:
+                    s.update(update_data)
+                    self._save_local_data()
+                    return s
+            return {}
+        else:
+            try:
+                ref = self.db.collection("chat_sessions").document(session_id)
+                ref.update(update_data)
+                self._cache_invalidate("chat_sessions")
+                return {"id": session_id, **update_data}
+            except Exception as e:
+                print(f"[ERROR] update_chat_session failed: {e}")
+                return {}
+
 
 # Singleton
 db = DatabaseService()

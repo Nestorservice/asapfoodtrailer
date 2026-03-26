@@ -28,6 +28,7 @@ from services.analytics import analytics_service
 from services.auth import auth_service
 from services.image_processor import image_processor
 from services.email_service import email_service
+from services.chat_service import chat_service, check_rate_limit
 
 # ─── App Init ─────────────────────────────────────────────────
 app = FastAPI(
@@ -706,6 +707,136 @@ async def api_delete_testimonial(testimonial_id: str):
     if not success:
         raise HTTPException(status_code=404, detail="Testimonial not found")
     return {"success": True}
+
+
+# ═══════════════════════════════════════════════════════════════
+#  CHAT ROUTES (Stream Chat)
+# ═══════════════════════════════════════════════════════════════
+
+
+@app.post("/api/chat/token")
+async def api_chat_token(request: Request):
+    """API: Generate a Stream Chat token for a visitor."""
+    # Rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests")
+
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    name = body.get("name", "").strip()
+    email = body.get("email", "").strip()
+    page = body.get("page", "/")
+
+    if not name or not email:
+        raise HTTPException(status_code=400, detail="Name and email are required")
+
+    if not chat_service.enabled:
+        raise HTTPException(status_code=503, detail="Chat service unavailable")
+
+    visitor_id = chat_service.generate_visitor_id(name, email)
+    chat_service.upsert_visitor(visitor_id, name, email, page)
+    token = chat_service.create_visitor_token(visitor_id)
+
+    if not token:
+        raise HTTPException(status_code=500, detail="Token generation failed")
+
+    # Save chat session to Firestore
+    try:
+        db.save_chat_session({
+            "visitor_id": visitor_id,
+            "visitor_name": name,
+            "visitor_email": email,
+            "visitor_page": page,
+        })
+    except Exception as e:
+        print(f"[ERROR] save_chat_session failed: {e}")
+
+    return {
+        "token": token,
+        "visitor_id": visitor_id,
+        "api_key": settings.STREAM_API_KEY,
+    }
+
+
+@app.post("/api/chat/channel")
+async def api_chat_channel(request: Request):
+    """API: Create or get a support channel for a visitor."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    visitor_id = body.get("visitor_id", "")
+    name = body.get("name", "Visitor")
+    email = body.get("email", "")
+    page = body.get("page", "/")
+
+    if not visitor_id:
+        raise HTTPException(status_code=400, detail="visitor_id is required")
+
+    result = chat_service.get_or_create_channel(visitor_id, name, email, page)
+    if not result:
+        raise HTTPException(status_code=500, detail="Channel creation failed")
+
+    return {"success": True, **result}
+
+
+@app.get("/api/chat/admin-token")
+async def api_chat_admin_token():
+    """API: Generate admin Stream Chat token."""
+    if not chat_service.enabled:
+        raise HTTPException(status_code=503, detail="Chat service unavailable")
+    token = chat_service.create_admin_token()
+    if not token:
+        raise HTTPException(status_code=500, detail="Admin token generation failed")
+    return {
+        "token": token,
+        "user_id": "asap-admin",
+        "api_key": settings.STREAM_API_KEY,
+    }
+
+
+@app.get("/api/chat/channels")
+async def api_chat_channels():
+    """API: List all chat channels (admin)."""
+    try:
+        channels = chat_service.list_channels()
+    except Exception as e:
+        print(f"[ERROR] list_channels failed: {e}")
+        channels = []
+    return {"channels": channels}
+
+
+@app.post("/api/chat/resolve")
+async def api_chat_resolve(request: Request):
+    """API: Mark a chat conversation as resolved."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    session_id = body.get("session_id", "")
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    try:
+        db.update_chat_session(session_id, {"status": "resolved"})
+    except Exception as e:
+        print(f"[ERROR] update_chat_session failed: {e}")
+
+    return {"success": True}
+
+
+@app.get("/admin/chat", response_class=HTMLResponse)
+async def admin_chat(request: Request):
+    """Admin chat management page."""
+    ctx = get_base_context(request)
+    ctx["stream_api_key"] = settings.STREAM_API_KEY
+    return templates.TemplateResponse("admin/chat.html", ctx)
 
 
 # ═══════════════════════════════════════════════════════════════
