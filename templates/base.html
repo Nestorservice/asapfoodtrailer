@@ -550,7 +550,7 @@
         }
 
         async function initStreamClient(apiKey, token, userId) {
-            client = StreamChat.StreamChat.getInstance(apiKey);
+            client = new StreamChat(apiKey);
             await client.connectUser({ id: userId }, token);
             isConnected = true;
         }
