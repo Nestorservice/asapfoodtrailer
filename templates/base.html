@@ -484,7 +484,7 @@
     </div>
 
     <!-- Stream Chat SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.40.4/dist/browser.full-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.14.0/dist/browser.full-bundle.min.js"></script>
     <script>
     const ASAP_Chat = (function() {
         let client = null, channel = null, visitorId = '', isOpen = false, isConnected = false;
@@ -550,7 +550,7 @@
         }
 
         async function initStreamClient(apiKey, token, userId) {
-            client = new StreamChat.StreamChat(apiKey);
+            client = StreamChat.StreamChat.getInstance(apiKey);
             await client.connectUser({ id: userId }, token);
             isConnected = true;
         }

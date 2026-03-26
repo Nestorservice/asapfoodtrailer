@@ -270,7 +270,7 @@
     </main>
 
     <!-- Stream Chat SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.40.4/dist/browser.full-bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.14.0/dist/browser.full-bundle.min.js"></script>
     <script>
     function toggleSidebar(){
         document.getElementById('adminSidebar').classList.toggle('open');
@@ -407,7 +407,7 @@
                 if (!res.ok) throw new Error('Token failed');
                 const data = await res.json();
 
-                client = new StreamChat.StreamChat(data.api_key);
+                client = StreamChat.StreamChat.getInstance(data.api_key);
                 await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
 
                 $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
@@ -598,7 +598,7 @@
                 if (!res.ok) throw new Error('Token failed');
                 const data = await res.json();
 
-                const client = new StreamChat.StreamChat(data.api_key);
+                const client = StreamChat.StreamChat.getInstance(data.api_key);
                 await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
 
                 document.getElementById('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
