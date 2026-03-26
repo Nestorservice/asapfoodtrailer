@@ -106,15 +106,47 @@
         /* Badge in sidebar nav */
         .nav-chat-badge{background:#dc3545;color:#fff;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
 
-        /* Responsive */
-        @media(max-width:991px){
-            .chat-sidebar{width:100%;position:absolute;z-index:10;height:100%}
-            .chat-main{display:none}
+        /* ─── Mobile (< 768px) ─── */
+        @media(max-width:767px){
+            .chat-layout{height:calc(100vh - 56px);height:calc(100dvh - 56px);position:relative}
+            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;height:100%}
+            .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11}
             .chat-layout.conv-open .chat-sidebar{display:none}
             .chat-layout.conv-open .chat-main{display:flex}
-            .back-btn{display:inline-flex!important}
+            .back-btn{display:inline-flex!important;width:44px;height:44px;align-items:center;justify-content:center}
+            .chat-stats{padding:10px 14px;gap:10px}
+            .chat-stat-item h4{font-size:1.1rem}
+            .conv-item{padding:12px 14px;min-height:64px}
+            .conv-avatar{width:44px;height:44px}
+            .conv-info .conv-name{font-size:.9rem}
+            .chat-search input{font-size:16px;min-height:44px;padding:12px 14px 12px 36px}
+            .chat-filter-btn{padding:8px 14px;font-size:.78rem;min-height:36px}
+            .chat-header-bar{padding:10px 14px;flex-wrap:wrap;gap:8px}
+            .chat-header-bar .chat-actions button{padding:10px 14px;font-size:.82rem;min-height:44px}
+            .admin-messages{padding:12px;-webkit-overflow-scrolling:touch}
+            .admin-msg{max-width:88%}
+            .admin-msg .msg-bubble{font-size:.9rem;padding:10px 12px}
+            .admin-msg .msg-bubble img{max-width:200px}
+            .admin-input-area{padding:10px 12px;padding-bottom:max(10px, env(safe-area-inset-bottom))}
+            .admin-input-row textarea{font-size:16px;min-height:44px;padding:10px 12px}
+            .admin-input-row button{width:44px;height:44px}
+            .admin-attach-btn{width:44px;height:44px;font-size:1.1rem}
+            .quick-replies{gap:4px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+            .quick-reply-btn{padding:8px 14px;font-size:.75rem;min-height:36px;flex-shrink:0}
+            .admin-file-preview{padding:6px 10px}
+            .admin-file-preview button{width:36px;height:36px}
         }
-        @media(min-width:992px){.back-btn{display:none!important}}
+        /* ─── Tablet (768px - 1024px) ─── */
+        @media(min-width:768px) and (max-width:1024px){
+            .chat-sidebar{width:280px}
+            .chat-header-bar .chat-actions button{min-height:40px}
+            .admin-input-row button{width:42px;height:42px}
+            .back-btn{display:none!important}
+        }
+        /* ─── Desktop (> 1024px) ─── */
+        @media(min-width:1025px){
+            .back-btn{display:none!important}
+        }
     </style>
 </head>
 

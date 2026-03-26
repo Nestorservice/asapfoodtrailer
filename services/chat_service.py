@@ -93,7 +93,6 @@ class ChatService:
                     "visitor_name": visitor_name,
                     "visitor_email": email,
                     "visitor_page": page,
-                    "created_by_id": visitor_id,
                 },
             )
             resp = channel.create(visitor_id)
