@@ -13,7 +13,7 @@ from typing import Optional
 from config import settings
 
 # ─── Cache TTL (seconds) ─────────────────────────────────────
-CACHE_TTL = 300  # 5 minutes
+CACHE_TTL = 1800  # 30 minutes (reduce Firestore reads on free tier)
 
 
 class DatabaseService:
@@ -51,6 +51,13 @@ class DatabaseService:
             keys_to_delete = [k for k in self._cache if k.startswith(prefix)]
             for k in keys_to_delete:
                 del self._cache[k]
+
+    def _cache_get_fallback(self, key: str):
+        """Return cached value even if expired (used when Firestore is down/quota exceeded)."""
+        entry = self._cache.get(key)
+        if entry:
+            return entry["data"]
+        return None
 
     def _init_firebase(self):
         """Initialize Firebase Admin SDK."""
@@ -141,19 +148,24 @@ class DatabaseService:
                 return cached
 
             ref = self.db.collection("trucks")
-            if filters:
-                if filters.get("category"):
-                    ref = ref.where("category", "==", filters["category"])
-                if filters.get("condition"):
-                    ref = ref.where("condition", "==", filters["condition"])
-                if filters.get("usage"):
-                    ref = ref.where("usage", "==", filters["usage"])
-                if filters.get("status"):
-                    ref = ref.where("status", "==", filters["status"])
-            docs = ref.stream()
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                if filters:
+                    if filters.get("category"):
+                        ref = ref.where("category", "==", filters["category"])
+                    if filters.get("condition"):
+                        ref = ref.where("condition", "==", filters["condition"])
+                    if filters.get("usage"):
+                        ref = ref.where("usage", "==", filters["usage"])
+                    if filters.get("status"):
+                        ref = ref.where("status", "==", filters["status"])
+                docs = ref.stream()
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_trucks failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     def get_truck(self, truck_id: str) -> Optional[dict]:
         """Get a single truck by ID."""
@@ -169,11 +181,17 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            doc = self.db.collection("trucks").document(truck_id).get()
-            if doc.exists:
-                result = {"id": doc.id, **doc.to_dict()}
-                self._cache_set(cache_key, result)
-                return result
+            try:
+                doc = self.db.collection("trucks").document(truck_id).get()
+                if doc.exists:
+                    result = {"id": doc.id, **doc.to_dict()}
+                    self._cache_set(cache_key, result)
+                    return result
+            except Exception as e:
+                print(f"[ERROR] get_truck failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                if fallback is not None:
+                    return fallback
             return None
 
     def get_truck_by_slug(self, slug: str) -> Optional[dict]:
@@ -190,13 +208,19 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            docs = (
-                self.db.collection("trucks").where("slug", "==", slug).limit(1).stream()
-            )
-            for doc in docs:
-                result = {"id": doc.id, **doc.to_dict()}
-                self._cache_set(cache_key, result)
-                return result
+            try:
+                docs = (
+                    self.db.collection("trucks").where("slug", "==", slug).limit(1).stream()
+                )
+                for doc in docs:
+                    result = {"id": doc.id, **doc.to_dict()}
+                    self._cache_set(cache_key, result)
+                    return result
+            except Exception as e:
+                print(f"[ERROR] get_truck_by_slug failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                if fallback is not None:
+                    return fallback
             return None
 
     def create_truck(self, truck_data: dict) -> dict:
@@ -291,16 +315,21 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            docs = (
-                self.db.collection("trucks")
-                .where("featured", "==", True)
-                .where("status", "==", "available")
-                .limit(limit)
-                .stream()
-            )
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                docs = (
+                    self.db.collection("trucks")
+                    .where("featured", "==", True)
+                    .where("status", "==", "available")
+                    .limit(limit)
+                    .stream()
+                )
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_featured_trucks failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     def get_fleet_stats(self) -> dict:
         """Get fleet status counters."""
@@ -319,15 +348,20 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            trucks = [doc.to_dict() for doc in self.db.collection("trucks").stream()]
-            result = {
-                "total": len(trucks),
-                "available": len([t for t in trucks if t.get("status") == "available"]),
-                "rented": len([t for t in trucks if t.get("status") == "rented"]),
-                "sold": len([t for t in trucks if t.get("status") == "sold"]),
-            }
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                trucks = [doc.to_dict() for doc in self.db.collection("trucks").stream()]
+                result = {
+                    "total": len(trucks),
+                    "available": len([t for t in trucks if t.get("status") == "available"]),
+                    "rented": len([t for t in trucks if t.get("status") == "rented"]),
+                    "sold": len([t for t in trucks if t.get("status") == "sold"]),
+                }
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_fleet_stats failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else {"total": 0, "available": 0, "rented": 0, "sold": 0}
 
     # ─── Leads ────────────────────────────────────────────────
 
@@ -356,14 +390,19 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            docs = (
-                self.db.collection("leads")
-                .order_by("date", direction="DESCENDING")
-                .stream()
-            )
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                docs = (
+                    self.db.collection("leads")
+                    .order_by("date", direction="DESCENDING")
+                    .stream()
+                )
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_leads failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     # ─── Analytics ────────────────────────────────────────────
 
@@ -394,18 +433,23 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            from datetime import timedelta
+            try:
+                from datetime import timedelta
 
-            cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-            docs = (
-                self.db.collection("analytics")
-                .where("timestamp", ">=", cutoff)
-                .order_by("timestamp", direction="DESCENDING")
-                .stream()
-            )
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+                cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+                docs = (
+                    self.db.collection("analytics")
+                    .where("timestamp", ">=", cutoff)
+                    .order_by("timestamp", direction="DESCENDING")
+                    .stream()
+                )
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_analytics failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     # ─── Testimonials ─────────────────────────────────────────
 
@@ -420,10 +464,15 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            docs = self.db.collection("testimonials").stream()
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                docs = self.db.collection("testimonials").stream()
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_testimonials failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     def create_testimonial(self, testimonial_data: dict) -> dict:
         """Create a new testimonial (image card)."""
@@ -474,15 +523,20 @@ class DatabaseService:
             if cached is not None:
                 return cached
 
-            docs = (
-                self.db.collection("trucks")
-                .order_by("views", direction="DESCENDING")
-                .limit(limit)
-                .stream()
-            )
-            result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
-            self._cache_set(cache_key, result)
-            return result
+            try:
+                docs = (
+                    self.db.collection("trucks")
+                    .order_by("views", direction="DESCENDING")
+                    .limit(limit)
+                    .stream()
+                )
+                result = [{"id": doc.id, **doc.to_dict()} for doc in docs]
+                self._cache_set(cache_key, result)
+                return result
+            except Exception as e:
+                print(f"[ERROR] get_most_viewed failed: {e}")
+                fallback = self._cache_get_fallback(cache_key)
+                return fallback if fallback is not None else []
 
     # ─── Settings ─────────────────────────────────────────────
 
