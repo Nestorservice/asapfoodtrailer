@@ -401,6 +401,27 @@
     .chat-welcome button:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 
     .chat-error{background:#fef2f2;color:#dc3545;padding:10px 14px;border-radius:10px;font-size:.82rem;text-align:center;margin:12px 16px;display:none}
+    /* Voice recording */
+    .voice-rec-overlay{display:none;position:absolute;bottom:0;left:0;right:0;background:#fff;padding:14px 16px;border-top:1px solid #eee;z-index:20;align-items:center;gap:10px}
+    .voice-rec-overlay.active{display:flex}
+    .voice-rec-dot{width:10px;height:10px;border-radius:50%;background:#dc3545;animation:rec-pulse 1s infinite}
+    @keyframes rec-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .voice-rec-timer{font-size:.85rem;font-weight:700;color:#333;font-family:'Inter',monospace;min-width:40px}
+    .voice-rec-wave{flex:1;display:flex;align-items:center;gap:2px;height:28px}
+    .voice-rec-wave span{width:3px;background:#ff6b00;border-radius:2px;transition:height .1s}
+    .voice-rec-cancel{background:none;border:none;color:#999;font-size:.82rem;cursor:pointer;padding:6px 10px}
+    .voice-rec-send{width:36px;height:36px;border-radius:50%;background:#ff6b00;color:#fff;border:none;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+    .chat-mic-btn{background:#f0f0f0;color:#666;font-size:1rem}
+    .chat-mic-btn:hover{background:#e5e5e5}
+    /* Audio player bubble */
+    .audio-player{display:flex;align-items:center;gap:8px;padding:6px 0}
+    .audio-player .play-btn{width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.1);border:none;color:#333;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .chat-msg.visitor .audio-player .play-btn{background:rgba(255,255,255,.2);color:#fff}
+    .audio-player .audio-wave{flex:1;height:24px;display:flex;align-items:center;gap:1px}
+    .audio-player .audio-wave span{width:2px;background:rgba(0,0,0,.25);border-radius:1px}
+    .chat-msg.visitor .audio-player .audio-wave span{background:rgba(255,255,255,.4)}
+    .audio-player .audio-dur{font-size:.72rem;color:#999;min-width:30px;text-align:right}
+    .chat-msg.visitor .audio-player .audio-dur{color:rgba(255,255,255,.6)}
     /* Lightbox */
     .chat-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:none;align-items:center;justify-content:center;cursor:zoom-out}
     .chat-lightbox.show{display:flex}
@@ -482,9 +503,18 @@
                     <button class="chat-emoji-btn" onclick="ASAP_Chat.toggleEmoji()" title="Emoji"><i class="bi bi-emoji-smile"></i></button>
                     <button class="chat-attach-btn" onclick="document.getElementById('chatFileInput').click()" title="Attach file"><i class="bi bi-paperclip"></i></button>
                     <textarea id="chatInput" rows="1" placeholder="Type a message..." onkeydown="ASAP_Chat.onKeyDown(event)" oninput="ASAP_Chat.autoResize(this)"></textarea>
+                    <button class="chat-mic-btn" id="chatMicBtn" onclick="ASAP_Chat.toggleRecording()" title="Voice message" style="width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="bi bi-mic-fill"></i></button>
                     <button class="chat-send-btn" id="chatSendBtn" onclick="ASAP_Chat.send()" disabled><i class="bi bi-send-fill"></i></button>
                 </div>
-                <input type="file" id="chatFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*" onchange="ASAP_Chat.onFileSelect(event)">
+                <!-- Voice recording overlay -->
+                <div class="voice-rec-overlay" id="voiceRecOverlay">
+                    <span class="voice-rec-dot"></span>
+                    <span class="voice-rec-timer" id="voiceRecTimer">0:00</span>
+                    <div class="voice-rec-wave" id="voiceRecWave"></div>
+                    <button class="voice-rec-cancel" onclick="ASAP_Chat.cancelRecording()"><i class="bi bi-trash"></i> Cancel</button>
+                    <button class="voice-rec-send" onclick="ASAP_Chat.stopAndSendRecording()"><i class="bi bi-send-fill"></i></button>
+                </div>
+                <input type="file" id="chatFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*,audio/*" onchange="ASAP_Chat.onFileSelect(event)">
             </div>
 
             <div class="emoji-picker" id="emojiPicker"></div>
@@ -512,6 +542,7 @@
     const ASAP_Chat = (function() {
         let client = null, channel = null, visitorId = '', isOpen = false, isConnected = false;
         let pendingFile = null, unreadCount = 0;
+        let mediaRecorder = null, audioChunks = [], recTimer = null, recSeconds = 0, recAnalyser = null, recAnimFrame = null;
 
         const EMOJIS = ['😊','😂','❤️','👍','🎉','🔥','👋','🙏','😍','🤝','💯','⭐','🚛','🚚','💰','✅','❌','📸','📎','⏰','🎯','💬','👏','🙌','😎','🤔','📞','📧'];
 
@@ -549,6 +580,16 @@
                     if (att.type === 'image') {
                         const src = att.image_url || att.thumb_url || att.asset_url;
                         content += `<img src="${src}" alt="image" onclick="ASAP_Chat.openLightbox('${src}')">`;
+                    } else if (att.type === 'audio') {
+                        const dur = att.duration || 0;
+                        const m = Math.floor(dur/60), s = dur%60;
+                        const durStr = m + ':' + (s<10?'0':'') + s;
+                        const waveBars = Array.from({length:20}, () => `<span style="height:${Math.max(3,Math.random()*20)}px"></span>`).join('');
+                        content += `<div class="audio-player" data-src="${att.asset_url}">
+                            <button class="play-btn" onclick="ASAP_Chat.playAudio(this)"><i class="bi bi-play-fill"></i></button>
+                            <div class="audio-wave">${waveBars}</div>
+                            <span class="audio-dur">${durStr}</span>
+                        </div>`;
                     } else {
                         const name = att.title || att.name || 'File';
                         const url = att.asset_url || '#';
@@ -591,6 +632,29 @@
         function buildEmojiPicker() {
             const picker = $('emojiPicker');
             picker.innerHTML = EMOJIS.map(e => `<span onclick="ASAP_Chat.insertEmoji('${e}')">${e}</span>`).join('');
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = function() {
+                    const MAX = 1200;
+                    let w = img.width, h = img.height;
+                    if (w > MAX || h > MAX) {
+                        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+                        else { w = Math.round(w * MAX / h); h = MAX; }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    canvas.toBlob(function(blob) {
+                        if (blob) resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+                        else reject(new Error('Compression failed'));
+                    }, 'image/jpeg', 0.8);
+                };
+                img.onerror = reject;
+                img.src = URL.createObjectURL(file);
+            });
         }
 
         async function initStreamClient(apiKey, token, userId) {
@@ -725,7 +789,6 @@
             async send() {
                 const input = $('chatInput');
                 const text = input.value.trim();
-                const fileInput = $('chatFileInput');
 
                 if (!text && !pendingFile) return;
                 if (!channel) return;
@@ -735,20 +798,47 @@
                 try {
                     let attachments = [];
                     if (pendingFile) {
-                        // Validate file
                         if (pendingFile.size > 10 * 1024 * 1024) {
                             showError('File must be under 10MB');
                             $('chatSendBtn').disabled = false;
                             return;
                         }
-                        const resp = await channel.sendFile(pendingFile);
                         const isImage = pendingFile.type.startsWith('image/');
+
+                        // Instant image preview: show immediately before upload
+                        let previewDiv = null;
+                        if (isImage) {
+                            const localUrl = URL.createObjectURL(pendingFile);
+                            previewDiv = document.createElement('div');
+                            previewDiv.className = 'chat-msg visitor';
+                            previewDiv.innerHTML = `<div class="bubble"><div class="chat-img-preview"><img src="${localUrl}" alt="uploading..." style="opacity:.7"><div class="upload-progress" style="width:10%"></div></div></div><div class="meta">Uploading...</div>`;
+                            $('chatMessages').appendChild(previewDiv);
+                            $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+                        }
+
+                        // Compress image if > 1MB
+                        let fileToUpload = pendingFile;
+                        if (isImage && pendingFile.size > 1024 * 1024) {
+                            try { fileToUpload = await compressImage(pendingFile); } catch(e) { fileToUpload = pendingFile; }
+                        }
+
+                        // Update progress
+                        if (previewDiv) {
+                            const bar = previewDiv.querySelector('.upload-progress');
+                            if (bar) bar.style.width = '50%';
+                        }
+
+                        const resp = await channel.sendFile(fileToUpload);
                         attachments.push({
                             type: isImage ? 'image' : 'file',
                             [isImage ? 'image_url' : 'asset_url']: resp.file,
                             title: pendingFile.name,
                             name: pendingFile.name,
                         });
+
+                        // Remove preview, real message will appear via event
+                        if (previewDiv) previewDiv.remove();
+
                         this.clearFile();
                     }
 
@@ -769,11 +859,9 @@
                     e.preventDefault();
                     this.send();
                 }
-                // Send typing indicator
                 if (channel && e.key !== 'Enter') {
                     try { channel.keystroke(); } catch(err) {}
                 }
-                // Enable/disable send button
                 setTimeout(() => {
                     $('chatSendBtn').disabled = !$('chatInput').value.trim() && !pendingFile;
                 }, 10);
@@ -788,7 +876,12 @@
                 if (!file) return;
                 if (file.size > 10 * 1024 * 1024) { showError('File must be under 10MB'); return; }
                 pendingFile = file;
-                $('chatFileName').textContent = file.name;
+                const isImage = file.type.startsWith('image/');
+                if (isImage) {
+                    $('chatFileName').innerHTML = `<img src="${URL.createObjectURL(file)}" style="height:28px;border-radius:4px;margin-right:4px"> ${file.name}`;
+                } else {
+                    $('chatFileName').textContent = file.name;
+                }
                 $('chatFilePreview').style.display = 'flex';
                 $('chatSendBtn').disabled = false;
             },
@@ -816,11 +909,134 @@
             closeLightbox() {
                 $('chatLightbox').classList.remove('show');
             },
+            playAudio(btn) {
+                const player = btn.closest('.audio-player');
+                const src = player.dataset.src;
+                if (!src) return;
+                let audio = player._audio;
+                if (!audio) {
+                    audio = new Audio(src);
+                    player._audio = audio;
+                    audio.addEventListener('ended', () => {
+                        btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+                    });
+                }
+                if (audio.paused) {
+                    audio.play();
+                    btn.innerHTML = '<i class="bi bi-pause-fill"></i>';
+                } else {
+                    audio.pause();
+                    btn.innerHTML = '<i class="bi bi-play-fill"></i>';
+                }
+            },
             scrollToBottom() {
                 const msgs = $('chatMessages');
                 if (msgs) msgs.scrollTop = msgs.scrollHeight;
                 const badge = $('scrollBadge');
                 if (badge) badge.style.display = 'none';
+            },
+            async toggleRecording() {
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    this.stopAndSendRecording();
+                    return;
+                }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioChunks = [];
+                    mediaRecorder = new MediaRecorder(stream, { mimeType: MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4' });
+                    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+                    mediaRecorder.start(100);
+                    recSeconds = 0;
+                    $('voiceRecTimer').textContent = '0:00';
+                    $('voiceRecOverlay').classList.add('active');
+                    $('chatMicBtn').style.color = '#dc3545';
+
+                    // Generate wave bars
+                    const waveEl = $('voiceRecWave');
+                    waveEl.innerHTML = '';
+                    for (let i = 0; i < 30; i++) {
+                        const bar = document.createElement('span');
+                        bar.style.height = '4px';
+                        waveEl.appendChild(bar);
+                    }
+
+                    // Animate waveform with Web Audio API
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioCtx.createMediaStreamSource(stream);
+                    recAnalyser = audioCtx.createAnalyser();
+                    recAnalyser.fftSize = 64;
+                    source.connect(recAnalyser);
+                    const dataArr = new Uint8Array(recAnalyser.frequencyBinCount);
+                    function animateWave() {
+                        recAnalyser.getByteFrequencyData(dataArr);
+                        const bars = waveEl.children;
+                        for (let i = 0; i < bars.length; i++) {
+                            const v = dataArr[i % dataArr.length] || 0;
+                            bars[i].style.height = Math.max(4, v / 255 * 28) + 'px';
+                        }
+                        recAnimFrame = requestAnimationFrame(animateWave);
+                    }
+                    animateWave();
+
+                    // Timer
+                    recTimer = setInterval(() => {
+                        recSeconds++;
+                        const m = Math.floor(recSeconds / 60);
+                        const s = recSeconds % 60;
+                        $('voiceRecTimer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
+                        if (recSeconds >= 120) this.stopAndSendRecording(); // Max 2 min
+                    }, 1000);
+                } catch (err) {
+                    console.error('Mic access error:', err);
+                    showError('Microphone access denied');
+                }
+            },
+            cancelRecording() {
+                if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                    mediaRecorder.stop();
+                }
+                mediaRecorder = null; audioChunks = [];
+                clearInterval(recTimer); recTimer = null;
+                if (recAnimFrame) cancelAnimationFrame(recAnimFrame);
+                $('voiceRecOverlay').classList.remove('active');
+                $('chatMicBtn').style.color = '';
+            },
+            async stopAndSendRecording() {
+                if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+                return new Promise((resolve) => {
+                    mediaRecorder.onstop = async () => {
+                        clearInterval(recTimer);
+                        if (recAnimFrame) cancelAnimationFrame(recAnimFrame);
+                        $('voiceRecOverlay').classList.remove('active');
+                        $('chatMicBtn').style.color = '';
+                        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+
+                        if (audioChunks.length === 0 || !channel) { resolve(); return; }
+                        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        const file = new File([blob], 'voice-message.webm', { type: blob.type });
+                        try {
+                            const resp = await channel.sendFile(file);
+                            await channel.sendMessage({
+                                attachments: [{
+                                    type: 'audio',
+                                    asset_url: resp.file,
+                                    title: 'Voice Message',
+                                    name: 'voice-message.webm',
+                                    mime_type: blob.type,
+                                    file_size: blob.size,
+                                    duration: recSeconds
+                                }]
+                            });
+                        } catch (err) {
+                            console.error('Voice send error:', err);
+                            showError('Failed to send voice message');
+                        }
+                        mediaRecorder = null; audioChunks = [];
+                        resolve();
+                    };
+                    mediaRecorder.stop();
+                });
             }
         };
     })();
