@@ -391,6 +391,92 @@ async def api_update_settings(request: Request):
 
 
 # ═══════════════════════════════════════════════════════════════
+#  CHAT ROUTES
+# ═══════════════════════════════════════════════════════════════
+
+
+@app.get("/admin/chat", response_class=HTMLResponse)
+async def admin_chat_page(request: Request):
+    """Admin chat page — real-time messaging with visitors."""
+    ctx = get_base_context(request)
+    return templates.TemplateResponse("admin/chat.html", ctx)
+
+
+@app.post("/api/chat/token")
+async def api_chat_token(request: Request):
+    """Generate a Stream Chat token for a visitor."""
+    # Rate limit check
+    client_ip = request.client.host if request.client else "unknown"
+    if not check_rate_limit(client_ip):
+        raise HTTPException(status_code=429, detail="Too many requests")
+
+    body = await request.json()
+    name = body.get("name", "").strip()
+    email = body.get("email", "").strip()
+    page = body.get("page", "/")
+
+    if not name or not email:
+        raise HTTPException(status_code=400, detail="Name and email required")
+
+    if not chat_service.enabled:
+        raise HTTPException(status_code=503, detail="Chat not configured")
+
+    visitor_id = chat_service.generate_visitor_id(name, email)
+    chat_service.upsert_visitor(visitor_id, name, email, page)
+    token = chat_service.create_visitor_token(visitor_id)
+
+    if not token:
+        raise HTTPException(status_code=500, detail="Token generation failed")
+
+    return {
+        "token": token,
+        "visitor_id": visitor_id,
+        "api_key": settings.STREAM_API_KEY,
+    }
+
+
+@app.post("/api/chat/channel")
+async def api_chat_channel(request: Request):
+    """Create or get a chat channel for a visitor."""
+    body = await request.json()
+    visitor_id = body.get("visitor_id", "")
+    name = body.get("name", "Visitor")
+    email = body.get("email", "")
+    page = body.get("page", "/")
+
+    if not visitor_id:
+        raise HTTPException(status_code=400, detail="visitor_id required")
+
+    if not chat_service.enabled:
+        raise HTTPException(status_code=503, detail="Chat not configured")
+
+    result = chat_service.get_or_create_channel(visitor_id, name, email, page)
+    if not result:
+        raise HTTPException(status_code=500, detail="Channel creation failed")
+
+    return result
+
+
+@app.get("/api/chat/admin-token")
+async def api_chat_admin_token():
+    """Generate a Stream Chat token for the admin."""
+    if not chat_service.enabled:
+        raise HTTPException(status_code=503, detail="Chat not configured")
+
+    chat_service.ensure_admin_user()
+    token = chat_service.create_admin_token()
+
+    if not token:
+        raise HTTPException(status_code=500, detail="Admin token generation failed")
+
+    return {
+        "token": token,
+        "user_id": "asap-admin",
+        "api_key": settings.STREAM_API_KEY,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════
 #  API ROUTES
 # ═══════════════════════════════════════════════════════════════
 

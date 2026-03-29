@@ -350,15 +350,22 @@
     .chat-msg{max-width:82%;display:flex;flex-direction:column;animation:msg-in .3s ease}
     .chat-msg.visitor{align-self:flex-end}
     .chat-msg.admin{align-self:flex-start}
-    .chat-msg .bubble{padding:10px 14px;border-radius:16px;font-size:.88rem;line-height:1.5;word-wrap:break-word}
-    .chat-msg.visitor .bubble{background:#ff6b00;color:#fff;border-bottom-right-radius:4px}
-    .chat-msg.admin .bubble{background:#fff;color:#333;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    .chat-msg .bubble{padding:10px 14px;border-radius:18px;font-size:.88rem;line-height:1.5;word-wrap:break-word;position:relative}
+    .chat-msg.visitor .bubble{background:#ff6b00;color:#fff;border-radius:18px 18px 4px 18px}
+    .chat-msg.admin .bubble{background:#fff;color:#333;border-radius:18px 18px 18px 4px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
     .chat-msg .meta{font-size:.68rem;color:#999;margin-top:3px;display:flex;align-items:center;gap:4px}
-    .chat-msg.visitor .meta{justify-content:flex-end}
+    .chat-msg.visitor .meta{justify-content:flex-end;color:rgba(255,255,255,.6)}
+    .chat-msg .ticks{font-size:.7rem;letter-spacing:-1px;color:#999}
+    .chat-msg.visitor .ticks{color:rgba(255,255,255,.5)}
+    .chat-msg .ticks.read{color:#53bdeb}
     .chat-msg .bubble img{max-width:100%;border-radius:8px;margin-top:4px;cursor:pointer}
     .chat-msg .bubble .file-attach{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(0,0,0,.05);border-radius:8px;margin-top:4px;text-decoration:none;color:inherit;font-size:.82rem;font-weight:500}
     .chat-msg.visitor .bubble .file-attach{background:rgba(255,255,255,.15);color:#fff}
-    @keyframes msg-in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .chat-msg .sender-name{font-size:.72rem;font-weight:700;color:#ff6b00;margin-bottom:2px}
+    .chat-img-preview{position:relative;display:inline-block}
+    .chat-img-preview .upload-progress{position:absolute;bottom:0;left:0;height:3px;background:#ff6b00;border-radius:0 0 8px 8px;transition:width .3s}
+    .scroll-badge{position:absolute;bottom:70px;left:50%;transform:translateX(-50%);background:#ff6b00;color:#fff;padding:6px 16px;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.15);display:none;z-index:5;animation:msg-in .3s ease}
+    @keyframes msg-in{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
 
     .chat-typing{display:none;align-self:flex-start;padding:6px 14px;color:#999;font-size:.78rem;font-style:italic}
 
@@ -394,6 +401,12 @@
     .chat-welcome button:disabled{opacity:.6;cursor:not-allowed;transform:none;box-shadow:none}
 
     .chat-error{background:#fef2f2;color:#dc3545;padding:10px 14px;border-radius:10px;font-size:.82rem;text-align:center;margin:12px 16px;display:none}
+    /* Lightbox */
+    .chat-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+    .chat-lightbox.show{display:flex}
+    .chat-lightbox img{max-width:95vw;max-height:90vh;object-fit:contain;border-radius:4px}
+    .chat-lightbox .lb-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;width:40px;height:40px;border-radius:50%;font-size:1.2rem;cursor:pointer}
+    .chat-lightbox .lb-download{position:absolute;bottom:24px;right:24px;background:#ff6b00;border:none;color:#fff;padding:10px 20px;border-radius:10px;font-weight:600;cursor:pointer;font-size:.85rem}
 
     /* ─── Mobile (< 768px) ─── */
     @media(max-width:767px){
@@ -483,6 +496,16 @@
         </button>
     </div>
 
+    <!-- Image Lightbox -->
+    <div class="chat-lightbox" id="chatLightbox" onclick="ASAP_Chat.closeLightbox()">
+        <button class="lb-close" onclick="ASAP_Chat.closeLightbox()"><i class="bi bi-x-lg"></i></button>
+        <img id="lightboxImg" src="" alt="">
+        <a class="lb-download" id="lightboxDl" href="" download target="_blank"><i class="bi bi-download"></i> Download</a>
+    </div>
+
+    <!-- Scroll-to-bottom badge -->
+    <div class="scroll-badge" id="scrollBadge" onclick="ASAP_Chat.scrollToBottom()" style="display:none">↓ New messages</div>
+
     <!-- Stream Chat SDK -->
     <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.14.0/dist/browser.full-bundle.min.js"></script>
     <script>
@@ -516,26 +539,47 @@
             const isVisitor = msg.user && msg.user.id !== 'asap-admin';
             const div = document.createElement('div');
             div.className = 'chat-msg ' + (isVisitor ? 'visitor' : 'admin');
+            div.dataset.msgId = msg.id || '';
 
             let content = '';
+            if (!isVisitor) content += '<div class="sender-name">ASAP Support</div>';
             if (msg.text) content += `<span>${escapeHtml(msg.text)}</span>`;
             if (msg.attachments && msg.attachments.length) {
                 msg.attachments.forEach(att => {
                     if (att.type === 'image') {
-                        content += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="image" onclick="window.open(this.src,'_blank')">`;
+                        const src = att.image_url || att.thumb_url || att.asset_url;
+                        content += `<img src="${src}" alt="image" onclick="ASAP_Chat.openLightbox('${src}')">`;
                     } else {
                         const name = att.title || att.name || 'File';
                         const url = att.asset_url || '#';
-                        content += `<a class="file-attach" href="${url}" target="_blank"><i class="bi bi-file-earmark"></i> ${escapeHtml(name)}</a>`;
+                        const ext = name.split('.').pop().toLowerCase();
+                        let icon = 'bi-file-earmark';
+                        if (ext === 'pdf') icon = 'bi-file-pdf text-danger';
+                        else if (['mp4','mov','webm'].includes(ext)) icon = 'bi-camera-video';
+                        else if (['doc','docx'].includes(ext)) icon = 'bi-file-word text-primary';
+                        else if (['xls','xlsx'].includes(ext)) icon = 'bi-file-excel text-success';
+                        content += `<a class="file-attach" href="${url}" target="_blank"><i class="bi ${icon}"></i> ${escapeHtml(name)}</a>`;
                     }
                 });
             }
 
-            const readIcon = isVisitor ? (msg.readByAdmin ? '✓✓' : '✓') : '';
-            div.innerHTML = `<div class="bubble">${content}</div><div class="meta">${formatTime(msg.created_at)}${readIcon ? ' &nbsp;' + readIcon : ''}</div>`;
+            // Read receipt ticks for visitor messages
+            let ticks = '';
+            if (isVisitor) {
+                const isRead = msg.readByAdmin || (channel && channel.state.read && Object.keys(channel.state.read).some(uid => uid === 'asap-admin' && channel.state.read[uid].last_read >= new Date(msg.created_at)));
+                ticks = isRead ? '<span class="ticks read">✓✓</span>' : '<span class="ticks">✓</span>';
+            }
 
-            $('chatMessages').appendChild(div);
-            $('chatMessages').scrollTop = $('chatMessages').scrollHeight;
+            div.innerHTML = `<div class="bubble">${content}</div><div class="meta">${formatTime(msg.created_at)} ${ticks}</div>`;
+
+            const msgs = $('chatMessages');
+            const isAtBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80;
+            msgs.appendChild(div);
+            if (isAtBottom) msgs.scrollTop = msgs.scrollHeight;
+            else if (!isVisitor) {
+                const badge = $('scrollBadge');
+                if (badge) { badge.style.display = 'block'; }
+            }
         }
 
         function escapeHtml(str) {
@@ -763,6 +807,20 @@
                 $('emojiPicker').style.display = 'none';
                 $('chatInput').focus();
                 $('chatSendBtn').disabled = false;
+            },
+            openLightbox(src) {
+                $('lightboxImg').src = src;
+                $('lightboxDl').href = src;
+                $('chatLightbox').classList.add('show');
+            },
+            closeLightbox() {
+                $('chatLightbox').classList.remove('show');
+            },
+            scrollToBottom() {
+                const msgs = $('chatMessages');
+                if (msgs) msgs.scrollTop = msgs.scrollHeight;
+                const badge = $('scrollBadge');
+                if (badge) badge.style.display = 'none';
             }
         };
     })();
@@ -774,6 +832,35 @@
             picker.style.display = 'none';
         }
     });
+
+    // Scroll badge: hide when user scrolls to bottom
+    (function() {
+        const msgs = document.getElementById('chatMessages');
+        if (msgs) {
+            msgs.addEventListener('scroll', function() {
+                if (msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80) {
+                    const badge = document.getElementById('scrollBadge');
+                    if (badge) badge.style.display = 'none';
+                }
+            });
+        }
+    })();
+
+    // Mobile keyboard handling via visualViewport
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function() {
+            const chatInput = document.getElementById('chatInputArea');
+            if (!chatInput) return;
+            const offset = window.innerHeight - window.visualViewport.height;
+            if (offset > 100) {
+                chatInput.style.paddingBottom = offset + 'px';
+                var m = document.getElementById('chatMessages');
+                if (m) m.scrollTop = m.scrollHeight;
+            } else {
+                chatInput.style.paddingBottom = '';
+            }
+        });
+    }
     </script>
     {% endif %}
 </body>
