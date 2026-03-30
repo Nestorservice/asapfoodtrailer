@@ -219,16 +219,26 @@ class DatabaseService:
                 seed = json.load(f)
 
             with conn.cursor() as cur:
-                # Seed trucks
+                # Seed trucks (handle duplicate slugs from Firebase)
                 trucks = seed.get("trucks", [])
+                seen_slugs = set()
                 for t in trucks:
+                    slug = t.get("slug", "")
+                    # Auto-fix duplicate slugs
+                    if slug in seen_slugs or not slug:
+                        base = slug or "truck"
+                        counter = 2
+                        while f"{base}-{counter}" in seen_slugs:
+                            counter += 1
+                        slug = f"{base}-{counter}"
+                    seen_slugs.add(slug)
                     cur.execute("""
                         INSERT INTO trucks (id, title, slug, description, price, category, condition, usage, status, featured, specs, images, views, created_at)
                         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         ON CONFLICT (id) DO NOTHING
                     """, [
                         t.get("id", str(uuid.uuid4())), t.get("title", ""),
-                        t.get("slug", ""), t.get("description", ""),
+                        slug, t.get("description", ""),
                         int(t.get("price", 0)), t.get("category", "truck"),
                         t.get("condition", "new"), t.get("usage", "sale"),
                         t.get("status", "available"), bool(t.get("featured", False)),
