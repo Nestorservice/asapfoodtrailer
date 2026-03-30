@@ -123,12 +123,6 @@ def get_base_context(request: Request) -> dict:
             "facebook": settings.SOCIAL_FACEBOOK,
             "instagram": settings.SOCIAL_INSTAGRAM,
         },
-        "firebase_config": {
-            "apiKey": settings.FIREBASE_API_KEY,
-            "authDomain": settings.FIREBASE_AUTH_DOMAIN,
-            "projectId": settings.FIREBASE_PROJECT_ID,
-            "storageBucket": settings.FIREBASE_STORAGE_BUCKET,
-        },
         "app_mode": settings.APP_MODE,
     }
 

@@ -39,7 +39,34 @@ class DatabaseService:
             print("[WARN] DATABASE_URL not set. Database will not work.")
             return
         try:
-            self._pool = pool.ThreadedConnectionPool(1, 5, db_url)
+            # Parse URL and resolve to IPv4 to avoid Render IPv6 issues
+            from urllib.parse import urlparse
+            import socket
+            parsed = urlparse(db_url)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or 5432
+            dbname = (parsed.path or "/postgres").lstrip("/")
+            user = parsed.username or "postgres"
+            password = parsed.password or ""
+
+            # Force IPv4 resolution
+            try:
+                ipv4 = socket.getaddrinfo(host, port, socket.AF_INET)[0][4][0]
+                print(f"[DB] Resolved {host} → {ipv4} (IPv4)")
+            except Exception:
+                ipv4 = None
+
+            if ipv4:
+                self._pool = pool.ThreadedConnectionPool(
+                    1, 5,
+                    host=host, hostaddr=ipv4, port=port,
+                    dbname=dbname, user=user, password=password,
+                    sslmode="require",
+                    connect_timeout=10
+                )
+            else:
+                self._pool = pool.ThreadedConnectionPool(1, 5, db_url)
+
             print("[DB] PostgreSQL connection pool created")
         except Exception as e:
             print(f"[ERROR] PostgreSQL connection failed: {e}")
