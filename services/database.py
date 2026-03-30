@@ -338,10 +338,10 @@ class DatabaseService:
             with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
                 cur.execute(query, params)
                 if fetch == "all":
-                    return [dict(r) for r in cur.fetchall()]
+                    return [self._serialize_row(dict(r)) for r in cur.fetchall()]
                 elif fetch == "one":
                     r = cur.fetchone()
-                    return dict(r) if r else None
+                    return self._serialize_row(dict(r)) if r else None
                 elif fetch == "none":
                     conn.commit()
                     return None
@@ -350,6 +350,17 @@ class DatabaseService:
             raise e
         finally:
             self._put_conn(conn)
+
+    @staticmethod
+    def _serialize_row(row: dict) -> dict:
+        """Convert datetime objects to ISO strings for JSON serialization."""
+        from datetime import datetime, date
+        for k, v in row.items():
+            if isinstance(v, datetime):
+                row[k] = v.isoformat()
+            elif isinstance(v, date):
+                row[k] = v.isoformat()
+        return row
 
     # ─── Trucks ───────────────────────────────────────────────
 
