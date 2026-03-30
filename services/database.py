@@ -39,32 +39,54 @@ class DatabaseService:
             print("[WARN] DATABASE_URL not set. Database will not work.")
             return
         try:
-            # Parse URL and resolve to IPv4 to avoid Render IPv6 issues
-            from urllib.parse import urlparse
-            import socket
+            from urllib.parse import urlparse, quote
+            import re
+
             parsed = urlparse(db_url)
-            host = parsed.hostname or "localhost"
-            port = parsed.port or 5432
-            dbname = (parsed.path or "/postgres").lstrip("/")
-            user = parsed.username or "postgres"
+            host = parsed.hostname or ""
             password = parsed.password or ""
 
-            # Force IPv4 resolution
-            try:
-                ipv4 = socket.getaddrinfo(host, port, socket.AF_INET)[0][4][0]
-                print(f"[DB] Resolved {host} → {ipv4} (IPv4)")
-            except Exception:
-                ipv4 = None
+            # Auto-convert Supabase direct URL → pooler URL (IPv4 compatible)
+            # Direct:  db.<ref>.supabase.co:5432
+            # Pooler:  aws-0-<region>.pooler.supabase.com:6543
+            match = re.match(r"db\.([a-z0-9]+)\.supabase\.co", host)
+            if match:
+                ref = match.group(1)
+                print(f"[DB] Supabase project detected: {ref}")
+                print(f"[DB] Converting to pooler URL (IPv4 compatible)...")
 
-            if ipv4:
-                self._pool = pool.ThreadedConnectionPool(
-                    1, 5,
-                    host=host, hostaddr=ipv4, port=port,
-                    dbname=dbname, user=user, password=password,
-                    sslmode="require",
-                    connect_timeout=10
-                )
+                # Try common AWS regions for Supabase pooler
+                regions = ["us-east-1", "us-west-1", "eu-west-1", "eu-central-1", "ap-southeast-1"]
+                connected = False
+
+                for region in regions:
+                    pooler_host = f"aws-0-{region}.pooler.supabase.com"
+                    pooler_user = f"postgres.{ref}"
+                    try:
+                        print(f"[DB] Trying pooler: {pooler_host} ...")
+                        self._pool = pool.ThreadedConnectionPool(
+                            1, 5,
+                            host=pooler_host, port=6543,
+                            dbname="postgres",
+                            user=pooler_user,
+                            password=password,
+                            sslmode="require",
+                            connect_timeout=10
+                        )
+                        print(f"[DB] ✓ Connected via pooler ({region})")
+                        connected = True
+                        break
+                    except Exception as e:
+                        err = str(e).split('\n')[0][:80]
+                        print(f"[DB] ✗ {region}: {err}")
+                        continue
+
+                if not connected:
+                    # Fallback: try direct connection anyway
+                    print("[DB] All pooler regions failed, trying direct connection...")
+                    self._pool = pool.ThreadedConnectionPool(1, 5, db_url)
             else:
+                # Non-Supabase URL: use as-is
                 self._pool = pool.ThreadedConnectionPool(1, 5, db_url)
 
             print("[DB] PostgreSQL connection pool created")
