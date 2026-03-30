@@ -279,11 +279,21 @@ class DatabaseService:
 
                 # Seed settings
                 settings_data = seed.get("settings", {})
-                for key, value in settings_data.items():
-                    cur.execute("""
-                        INSERT INTO settings (key, value) VALUES (%s, %s)
-                        ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
-                    """, [key, str(value)])
+                # Firebase exports settings as a list of docs, convert to dict
+                if isinstance(settings_data, list):
+                    flat = {}
+                    for doc in settings_data:
+                        if isinstance(doc, dict):
+                            for k, v in doc.items():
+                                if k != "id":  # skip document ID
+                                    flat[k] = v
+                    settings_data = flat
+                if isinstance(settings_data, dict):
+                    for key, value in settings_data.items():
+                        cur.execute("""
+                            INSERT INTO settings (key, value) VALUES (%s, %s)
+                            ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value
+                        """, [key, str(value)])
 
             conn.commit()
             print(f"[DB] Seeded from seed.json: {len(trucks)} trucks, {len(leads)} leads, {len(testimonials)} testimonials")
