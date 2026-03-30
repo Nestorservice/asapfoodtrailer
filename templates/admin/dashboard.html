@@ -412,8 +412,7 @@
                                                 <span style="color:#aaa;font-size:.8rem;">General inquiry</span>
                                                 {% endif %}
                                             </td>
-                                            <td style="font-size:.8rem;">{{ l.created_at[:10] if l.created_at else
-                                                (l.date[:10] if l.date else '—') }}</td>
+                                            <td style="font-size:.8rem;">{{ l.created_at.strftime('%Y-%m-%d') if l.created_at is not string and l.created_at else (l.created_at[:10] if l.created_at else (l.date[:10] if l.date else '—')) }}</td>
                                             <td>
                                                 {% set wa_msg = "Hello " ~ l.customer_name ~ "! 👋 Thank you for your
                                                 interest" %}

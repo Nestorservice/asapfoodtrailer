@@ -190,17 +190,24 @@ class DatabaseService:
             self._put_conn(conn)
 
     def _seed_from_json(self):
-        """Auto-seed from data/seed.json if tables are empty (first deploy)."""
+        """Auto-seed from data/seed.json if tables are empty or FORCE_RESEED=1."""
         if not self._pool:
             return
+        force = os.environ.get("FORCE_RESEED", "0") == "1"
         conn = self._get_conn()
         try:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) FROM trucks")
                 count = cur.fetchone()[0]
-                if count > 0:
+                if count > 0 and not force:
                     print(f"[DB] Trucks table has {count} rows, skipping seed")
                     return
+                if force and count > 0:
+                    print(f"[DB] FORCE_RESEED: Clearing all tables...")
+                    for table in ["settings", "analytics", "testimonials", "leads", "trucks"]:
+                        cur.execute(f"DELETE FROM {table}")
+                    conn.commit()
+                    print("[DB] Tables cleared")
 
             # Load seed data
             seed_file = os.path.join(settings.DATA_DIR, "seed.json")

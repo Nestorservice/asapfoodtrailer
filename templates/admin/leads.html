@@ -315,8 +315,8 @@
                     </div>
                     <div class="col-lg-2 col-md-4 mb-2 mb-lg-0">
                         <div style="font-size:.78rem;color:#999;">
-                            <i class="bi bi-calendar3"></i> {{ lead.created_at[:10] if lead.created_at else
-                            (lead.date[:10] if lead.date else '—') }}
+                            <i class="bi bi-calendar3"></i> {{ lead.created_at.strftime('%Y-%m-%d') if lead.created_at is not string and lead.created_at else (lead.created_at[:10] if lead.created_at else
+                            (lead.date[:10] if lead.date else '—')) }}
                         </div>
                         <span
                             class="badge mt-1 {{ 'bg-warning text-dark' if lead.status=='new' else 'bg-info' if lead.status=='contacted' else 'bg-success' if lead.status=='converted' else 'bg-secondary' }}">

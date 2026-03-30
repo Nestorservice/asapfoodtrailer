@@ -34,6 +34,8 @@ uploads/
 # Migration scripts (not needed in prod)
 migrate_to_firebase.py
 migrate_firebase_to_pg.py
+download_firebase.py
+trim_seed.py
 
 # Local data (using Firebase in prod)
 # data/seed.json - keep for backup
