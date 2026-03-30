@@ -77,8 +77,7 @@ class DatabaseService:
                         connected = True
                         break
                     except Exception as e:
-                        err = str(e).split('\n')[0][:80]
-                        print(f"[DB] ✗ {region}: {err}")
+                        print(f"[DB] ✗ {region}: {e}")
                         continue
 
                 if not connected:
