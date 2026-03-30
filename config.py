@@ -10,15 +10,12 @@ load_dotenv()
 
 class Settings:
     # App mode
-    APP_MODE = os.getenv("APP_MODE", "local")  # "local" or "firebase"
+    APP_MODE = os.getenv("APP_MODE", "postgres")  # "postgres" or "local"
     DEBUG = os.getenv("DEBUG", "true").lower() == "true"
 
-    # Firebase
-    FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "")
-    FIREBASE_SERVICE_ACCOUNT_PATH = os.getenv("FIREBASE_SERVICE_ACCOUNT_PATH", "")
-    FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY", "")
-    FIREBASE_AUTH_DOMAIN = os.getenv("FIREBASE_AUTH_DOMAIN", "")
-    FIREBASE_STORAGE_BUCKET = os.getenv("FIREBASE_STORAGE_BUCKET", "")
+    # Database (Supabase PostgreSQL)
+    DATABASE_URL = os.getenv("DATABASE_URL", "")
+
 
     # Stream Chat
     STREAM_API_KEY = os.getenv("STREAM_API_KEY", "")

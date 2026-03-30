@@ -31,8 +31,9 @@ Thumbs.db
 # Uploads
 uploads/
 
-# Migration script (not needed in prod)
+# Migration scripts (not needed in prod)
 migrate_to_firebase.py
+migrate_firebase_to_pg.py
 
 # Local data (using Firebase in prod)
 # data/seed.json - keep for backup
