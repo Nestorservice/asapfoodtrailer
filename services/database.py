@@ -174,6 +174,15 @@ class DatabaseService:
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     );
 
+                    CREATE TABLE IF NOT EXISTS push_subscriptions (
+                        id SERIAL PRIMARY KEY,
+                        endpoint TEXT UNIQUE NOT NULL,
+                        p256dh TEXT NOT NULL,
+                        auth TEXT NOT NULL,
+                        user_type TEXT DEFAULT 'admin',
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+
                     CREATE INDEX IF NOT EXISTS idx_trucks_status ON trucks(status);
                     CREATE INDEX IF NOT EXISTS idx_trucks_featured ON trucks(featured);
                     CREATE INDEX IF NOT EXISTS idx_trucks_category ON trucks(category);

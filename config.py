@@ -21,6 +21,11 @@ class Settings:
     STREAM_API_KEY = os.getenv("STREAM_API_KEY", "")
     STREAM_API_SECRET = os.getenv("STREAM_API_SECRET", "")
 
+    # Web Push (VAPID keys)
+    VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY", "")
+    VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY", "")
+    VAPID_CLAIMS_EMAIL = os.getenv("VAPID_CLAIMS_EMAIL", "mailto:admin@asapfoodtrailer.com")
+
     # Admin
     ADMIN_EMAILS = [
         e.strip()

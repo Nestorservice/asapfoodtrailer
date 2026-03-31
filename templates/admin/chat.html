@@ -277,55 +277,38 @@
         document.getElementById('sidebarOverlay').classList.toggle('show');
     }
 
-    const AdminChat = (function() {
-        let client = null, activeChannel = null, channels = [], currentFilter = 'all';
-        let pendingFile = null, activeChannelId = null;
+    /* ─── Admin Chat Controller ─── */
+    const AdminChat = {};
 
-        // Notification sound
-        let notifSound = null;
-        try {
-            notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3');
-        } catch(e) {}
-
+    document.addEventListener('DOMContentLoaded', async () => {
         const $ = id => document.getElementById(id);
 
-        function escapeHtml(str) {
-            const d = document.createElement('div');
-            d.textContent = str || '';
-            return d.innerHTML;
-        }
+        let client = null, channels = [], activeChannel = null, activeChannelId = null;
+        let pendingFile = null, currentFilter = 'all';
 
-        function formatTime(d) {
+        // ── Notification sound (short beep) ──
+        let notifSound = null;
+        try { notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3'); } catch(e) {}
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+        function fmtTime(d) {
             if (!d) return '';
-            const date = new Date(d);
-            const now = new Date();
-            const isToday = date.toDateString() === now.toDateString();
-            if (isToday) return date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-            return date.toLocaleDateString([], { month:'short', day:'numeric' }) + ' ' + date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            const date = new Date(d), now = new Date();
+            if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            return date.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
         }
+        function getInitials(name) { return (name||'V').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2); }
 
-        function getInitials(name) {
-            return (name || 'V').split(' ').map(w => w[0]).join('').toUpperCase().substring(0,2);
-        }
-
-        function renderConversationList() {
-            const list = $('convList');
+        // ── Render conversation list ──
+        function renderList() {
             const search = ($('convSearch').value || '').toLowerCase();
             let filtered = channels;
+            if (search) filtered = filtered.filter(ch => {
+                const n = (ch.data.visitor_name || '').toLowerCase(), e = (ch.data.visitor_email || '').toLowerCase();
+                return n.includes(search) || e.includes(search);
+            });
+            if (currentFilter === 'unread') filtered = filtered.filter(ch => ch.countUnread() > 0);
 
-            if (search) {
-                filtered = filtered.filter(ch => {
-                    const name = (ch.data.visitor_name || '').toLowerCase();
-                    const email = (ch.data.visitor_email || '').toLowerCase();
-                    return name.includes(search) || email.includes(search);
-                });
-            }
-
-            if (currentFilter === 'unread') {
-                filtered = filtered.filter(ch => ch.countUnread() > 0);
-            }
-
-            // Update stats
             let unreadTotal = 0, todayCount = 0;
             const today = new Date().toDateString();
             channels.forEach(ch => {
@@ -335,484 +318,282 @@
             $('statTotal').textContent = channels.length;
             $('statUnread').textContent = unreadTotal;
             $('statToday').textContent = todayCount;
-
-            // Update sidebar badge
             const badge = $('sidebarBadge');
-            if (unreadTotal > 0) { badge.textContent = unreadTotal; badge.style.display = 'inline'; }
-            else { badge.style.display = 'none'; }
-
-            // Update favicon title
+            if (unreadTotal > 0) { badge.textContent = unreadTotal; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
             document.title = unreadTotal > 0 ? `(${unreadTotal}) Chat — ASAP Admin` : 'Chat — ASAP Admin';
 
-            if (filtered.length === 0) {
-                list.innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations found</p></div>';
+            if (!filtered.length) {
+                $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations</p></div>';
                 return;
             }
-
-            list.innerHTML = filtered.map(ch => {
-                const d = ch.data;
-                const name = d.visitor_name || 'Visitor';
-                const email = d.visitor_email || '';
-                const page = d.visitor_page || '/';
-                const lastMsg = ch.state.messages.length ? ch.state.messages[ch.state.messages.length - 1] : null;
-                const lastText = lastMsg ? (lastMsg.text || '📎 Attachment') : 'No messages yet';
-                const lastTime = lastMsg ? formatTime(lastMsg.created_at) : '';
-                const unread = ch.countUnread();
-                const isActive = ch.id === activeChannelId;
-
-                return `<div class="conv-item ${isActive ? 'active' : ''}" onclick="AdminChat.selectConversation('${ch.id}')">
-                    <div class="conv-avatar">${getInitials(name)}<span class="online-dot" style="display:none"></span></div>
+            $('convList').innerHTML = filtered.map(ch => {
+                const d = ch.data, name = d.visitor_name || 'Visitor', email = d.visitor_email || '', page = d.visitor_page || '/';
+                const lm = ch.state.messages.length ? ch.state.messages[ch.state.messages.length - 1] : null;
+                const lt = lm ? (lm.text || '📎 Attachment') : 'No messages';
+                const t = lm ? fmtTime(lm.created_at) : '';
+                const u = ch.countUnread();
+                const act = ch.id === activeChannelId;
+                return `<div class="conv-item ${act ? 'active' : ''}" onclick="AdminChat.selectConv('${ch.id}')">
+                    <div class="conv-avatar">${getInitials(name)}</div>
                     <div class="conv-info">
-                        <div class="conv-name">${escapeHtml(name)} <span class="conv-email">${escapeHtml(email)}</span></div>
-                        <div class="conv-last-msg">${escapeHtml(lastText)}</div>
-                        <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${escapeHtml(page)}</div>
+                        <div class="conv-name">${esc(name)} <span class="conv-email">${esc(email)}</span></div>
+                        <div class="conv-last-msg">${esc(lt)}</div>
+                        <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${esc(page)}</div>
                     </div>
-                    <div class="conv-meta">
-                        <span class="conv-time">${lastTime}</span>
-                        ${unread > 0 ? `<span class="conv-unread">${unread}</span>` : ''}
-                    </div>
+                    <div class="conv-meta"><span class="conv-time">${t}</span>${u > 0 ? `<span class="conv-unread">${u}</span>` : ''}</div>
                 </div>`;
             }).join('');
         }
 
-        function renderMessages() {
+        // ── Render messages ──
+        function renderMsgs() {
             if (!activeChannel) return;
             const el = $('adminMessages');
             el.innerHTML = '';
             activeChannel.state.messages.forEach(msg => {
-                const isAdmin = msg.user && msg.user.id === 'asap-admin';
-                const div = document.createElement('div');
-                div.className = 'admin-msg ' + (isAdmin ? 'from-admin' : 'from-visitor');
-
-                let content = '';
-                if (msg.text) content += `<span>${escapeHtml(msg.text)}</span>`;
+                const isA = msg.user && msg.user.id === 'asap-admin';
+                const d = document.createElement('div');
+                d.className = 'admin-msg ' + (isA ? 'from-admin' : 'from-visitor');
+                let c = '';
+                if (msg.text) c += `<span>${esc(msg.text)}</span>`;
                 if (msg.attachments && msg.attachments.length) {
                     msg.attachments.forEach(att => {
-                        if (att.type === 'image') {
-                            content += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="image" onclick="window.open(this.src,'_blank')">`;
-                        } else {
-                            content += `<a class="file-link" href="${att.asset_url || '#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${escapeHtml(att.title || att.name || 'File')}</a>`;
-                        }
+                        if (att.type === 'image') c += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="" onclick="window.open(this.src,'_blank')">`;
+                        else c += `<a class="file-link" href="${att.asset_url || '#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${esc(att.title || att.name || 'File')}</a>`;
                     });
                 }
-                div.innerHTML = `<div class="msg-bubble">${content}</div><div class="msg-meta">${formatTime(msg.created_at)}</div>`;
-                el.appendChild(div);
+                d.innerHTML = `<div class="msg-bubble">${c}</div><div class="msg-meta">${fmtTime(msg.created_at)}</div>`;
+                el.appendChild(d);
             });
             el.scrollTop = el.scrollHeight;
         }
 
-        async function connectAdmin() {
+        // ── Send push notification to server ──
+        async function triggerPushNotification(visitorName, messageText) {
             try {
-                const res = await fetch('/api/chat/admin-token');
-                if (!res.ok) throw new Error('Token failed');
-                const data = await res.json();
-
-                client = new StreamChat(data.api_key);
-                await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
-
-                $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
-
-                // Load channels
-                const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
-                const sort = [{ field: 'last_message_at', direction: -1 }];
-                channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
-
-                renderConversationList();
-
-                // Listen for new messages across all channels
-                client.on('message.new', event => {
-                    renderConversationList();
-                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
-                        renderMessages();
-                    }
-                    // Notification
-                    if (event.user.id !== 'asap-admin') {
-                        if (notifSound) try { notifSound.play(); } catch(e) {}
-                        // Browser notification
-                        if (Notification.permission === 'granted' && document.hidden) {
-                            new Notification('New message from ' + (event.user.name || 'Visitor'), {
-                                body: event.message.text || '📎 Attachment',
-                                icon: '/assets/img/logo/logo.jpg'
-                            });
-                        }
-                    }
+                await fetch('/api/push/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: '💬 ' + (visitorName || 'Visitor'),
+                        body: messageText || '📎 Attachment',
+                        url: '/admin/chat',
+                        channelId: activeChannelId || ''
+                    })
                 });
-
-                // Typing indicators
-                client.on('typing.start', event => {
-                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
-                        $('adminTyping').style.display = 'block';
-                    }
-                });
-                client.on('typing.stop', event => {
-                    if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin') {
-                        $('adminTyping').style.display = 'none';
-                    }
-                });
-
-                // Request notification permission
-                if (Notification.permission === 'default') {
-                    Notification.requestPermission();
-                }
-
-            } catch (err) {
-                console.error('Admin chat connect error:', err);
-                $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Disconnected';
-                $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Unable to connect to chat</p><small>Check your Stream Chat configuration</small></div>';
-            }
+            } catch (e) { console.warn('[Push] Trigger failed:', e); }
         }
 
-        return {
-            async selectConversation(channelId) {
-                activeChannelId = channelId;
-                activeChannel = channels.find(ch => ch.id === channelId);
-                if (!activeChannel) return;
+        // ── Connect to Stream Chat ──
+        try {
+            const res = await fetch('/api/chat/admin-token');
+            if (!res.ok) throw new Error('Token fetch failed');
+            const data = await res.json();
 
-                // Update UI
-                $('chatEmpty').style.display = 'none';
-                $('activeChatView').style.display = 'flex';
+            client = new StreamChat(data.api_key);
+            await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
+            $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
 
-                const d = activeChannel.data;
-                $('activeVisitorName').textContent = d.visitor_name || 'Visitor';
-                $('activeVisitorEmail').textContent = d.visitor_email || '';
-                $('activeVisitorPage').textContent = d.visitor_page || '/';
+            const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
+            const sort = [{ field: 'last_message_at', direction: -1 }];
+            channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
 
-                renderMessages();
-                renderConversationList();
+            renderList();
+            $('convSearch').oninput = () => renderList();
 
-                // Mark as read
-                try { await activeChannel.markRead(); } catch(e) {}
-                setTimeout(() => renderConversationList(), 500);
-
-                // Mobile: show chat
-                $('chatLayout').classList.add('conv-open');
-            },
-
-            backToList() {
-                $('chatLayout').classList.remove('conv-open');
-                activeChannelId = null;
-            },
-
-            filterConversations() { renderConversationList(); },
-
-            setFilter(filter, el) {
-                currentFilter = filter;
-                document.querySelectorAll('.chat-filter-btn').forEach(b => b.classList.remove('active'));
-                el.classList.add('active');
-                renderConversationList();
-            },
-
-            async send() {
-                const input = $('adminInput');
-                const text = input.value.trim();
-                if (!text && !pendingFile) return;
-                if (!activeChannel) return;
-
-                $('adminSendBtn').disabled = true;
-
-                try {
-                    let attachments = [];
-                    if (pendingFile) {
-                        if (pendingFile.size > 10 * 1024 * 1024) {
-                            alert('File must be under 10MB');
-                            $('adminSendBtn').disabled = false;
-                            return;
-                        }
-                        const resp = await activeChannel.sendFile(pendingFile);
-                        const isImage = pendingFile.type.startsWith('image/');
-                        attachments.push({
-                            type: isImage ? 'image' : 'file',
-                            [isImage ? 'image_url' : 'asset_url']: resp.file,
-                            title: pendingFile.name,
-                            name: pendingFile.name,
-                        });
-                        this.clearFile();
-                    }
-                    await activeChannel.sendMessage({ text: text || undefined, attachments });
-                    input.value = '';
-                    input.style.height = 'auto';
-                    renderMessages();
-                } catch(err) {
-                    console.error('Send error:', err);
-                    alert('Failed to send message');
-                } finally {
-                    $('adminSendBtn').disabled = false;
-                }
-            },
-
-            quickReply(text) {
-                $('adminInput').value = text;
-                $('adminSendBtn').disabled = false;
-                $('adminInput').focus();
-            },
-
-            onKeyDown(e) {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.send(); }
-                if (activeChannel && e.key !== 'Enter') try { activeChannel.keystroke(); } catch(err) {}
-                setTimeout(() => { $('adminSendBtn').disabled = !$('adminInput').value.trim() && !pendingFile; }, 10);
-            },
-
-            autoResize(el) {
-                el.style.height = 'auto';
-                el.style.height = Math.min(el.scrollHeight, 80) + 'px';
-                $('adminSendBtn').disabled = !el.value.trim() && !pendingFile;
-            },
-
-            onFileSelect(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.size > 10 * 1024 * 1024) { alert('File must be under 10MB'); return; }
-                pendingFile = file;
-                $('adminFileName').textContent = file.name;
-                $('adminFilePreview').style.display = 'flex';
-                $('adminSendBtn').disabled = false;
-            },
-
-            clearFile() {
-                pendingFile = null;
-                $('adminFileInput').value = '';
-                $('adminFilePreview').style.display = 'none';
-                $('adminSendBtn').disabled = !$('adminInput').value.trim();
-            },
-
-            async resolveChat() {
-                if (!activeChannel) return;
-                if (!confirm('Mark this conversation as resolved?')) return;
-                try {
-                    await activeChannel.sendMessage({ text: '✅ This conversation has been resolved. Thank you!' });
-                    renderMessages();
-                } catch(e) { console.error(e); }
-            }
-        };
-    })();
-
-    // Initialize
-    AdminChat.init = () => {};
-    document.addEventListener('DOMContentLoaded', () => {
-        // Start connection
-        (async () => {
-            const ConnectAdmin = AdminChat.__proto__ || {};
-            // Direct call to connect
-            try {
-                const res = await fetch('/api/chat/admin-token');
-                if (!res.ok) throw new Error('Token failed');
-                const data = await res.json();
-
-                const client = new StreamChat(data.api_key);
-                await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
-
-                document.getElementById('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
-
-                const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
-                const sort = [{ field: 'last_message_at', direction: -1 }];
-                const channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
-
-                // Expose to AdminChat
-                AdminChat._client = client;
-                AdminChat._channels = channels;
-
-                // Render list
-                const convList = document.getElementById('convList');
-                const searchEl = document.getElementById('convSearch');
-
-                function getInitials(name) { return (name||'V').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2); }
-                function fmtTime(d) {
-                    if(!d)return '';
-                    const date=new Date(d),now=new Date();
-                    if(date.toDateString()===now.toDateString()) return date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-                    return date.toLocaleDateString([],{month:'short',day:'numeric'})+' '+date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-                }
-                function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML;}
-
-                let currentFilter = 'all', activeChannel = null, activeChannelId = null, pendingFile = null;
-                let notifSound = null;
-                try { notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3'); } catch(e) {}
-
-                function renderList() {
-                    const search = (searchEl.value||'').toLowerCase();
-                    let filtered = channels;
-                    if (search) filtered = filtered.filter(ch => {
-                        const n=(ch.data.visitor_name||'').toLowerCase(), e=(ch.data.visitor_email||'').toLowerCase();
-                        return n.includes(search)||e.includes(search);
-                    });
-                    if (currentFilter==='unread') filtered = filtered.filter(ch=>ch.countUnread()>0);
-
-                    let unreadTotal=0, todayCount=0;
-                    const today = new Date().toDateString();
-                    channels.forEach(ch=>{
-                        unreadTotal+=ch.countUnread();
-                        if(ch.data.created_at&&new Date(ch.data.created_at).toDateString()===today)todayCount++;
-                    });
-                    document.getElementById('statTotal').textContent=channels.length;
-                    document.getElementById('statUnread').textContent=unreadTotal;
-                    document.getElementById('statToday').textContent=todayCount;
-                    const badge=document.getElementById('sidebarBadge');
-                    if(unreadTotal>0){badge.textContent=unreadTotal;badge.style.display='inline';}else{badge.style.display='none';}
-                    document.title=unreadTotal>0?`(${unreadTotal}) Chat — ASAP Admin`:'Chat — ASAP Admin';
-
-                    if(!filtered.length){
-                        convList.innerHTML='<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations</p></div>';
-                        return;
-                    }
-                    convList.innerHTML=filtered.map(ch=>{
-                        const d=ch.data,name=d.visitor_name||'Visitor',email=d.visitor_email||'',page=d.visitor_page||'/';
-                        const lm=ch.state.messages.length?ch.state.messages[ch.state.messages.length-1]:null;
-                        const lt=lm?(lm.text||'📎 Attachment'):'No messages';
-                        const t=lm?fmtTime(lm.created_at):'';
-                        const u=ch.countUnread();
-                        const act=ch.id===activeChannelId;
-                        return `<div class="conv-item ${act?'active':''}" onclick="AdminChat.selectConv('${ch.id}')">
-                            <div class="conv-avatar">${getInitials(name)}</div>
-                            <div class="conv-info">
-                                <div class="conv-name">${esc(name)} <span class="conv-email">${esc(email)}</span></div>
-                                <div class="conv-last-msg">${esc(lt)}</div>
-                                <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${esc(page)}</div>
-                            </div>
-                            <div class="conv-meta"><span class="conv-time">${t}</span>${u>0?`<span class="conv-unread">${u}</span>`:''}</div>
-                        </div>`;
-                    }).join('');
-                }
-
-                function renderMsgs() {
-                    if(!activeChannel)return;
-                    const el=document.getElementById('adminMessages');
-                    el.innerHTML='';
-                    activeChannel.state.messages.forEach(msg=>{
-                        const isA=msg.user&&msg.user.id==='asap-admin';
-                        const d=document.createElement('div');
-                        d.className='admin-msg '+(isA?'from-admin':'from-visitor');
-                        let c='';
-                        if(msg.text)c+=`<span>${esc(msg.text)}</span>`;
-                        if(msg.attachments&&msg.attachments.length){
-                            msg.attachments.forEach(att=>{
-                                if(att.type==='image')c+=`<img src="${att.image_url||att.thumb_url||att.asset_url}" alt="" onclick="window.open(this.src,'_blank')">`;
-                                else c+=`<a class="file-link" href="${att.asset_url||'#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${esc(att.title||att.name||'File')}</a>`;
-                            });
-                        }
-                        d.innerHTML=`<div class="msg-bubble">${c}</div><div class="msg-meta">${fmtTime(msg.created_at)}</div>`;
-                        el.appendChild(d);
-                    });
-                    el.scrollTop=el.scrollHeight;
-                }
-
-                // Event listeners
-                client.on('message.new', event=>{
-                    renderList();
-                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')renderMsgs();
-                    if(event.user.id!=='asap-admin'){
-                        if(notifSound)try{notifSound.play();}catch(e){}
-                        if(Notification.permission==='granted'&&document.hidden){
-                            new Notification('New message from '+(event.user.name||'Visitor'),{body:event.message.text||'📎',icon:'/assets/img/logo/logo.jpg'});
-                        }
-                    }
-                });
-                client.on('typing.start',event=>{
-                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')
-                        document.getElementById('adminTyping').style.display='block';
-                });
-                client.on('typing.stop',event=>{
-                    if(activeChannel&&event.cid===activeChannel.cid&&event.user.id!=='asap-admin')
-                        document.getElementById('adminTyping').style.display='none';
-                });
-
-                if(Notification.permission==='default')Notification.requestPermission();
-
+            // ── Event listeners ──
+            client.on('message.new', event => {
                 renderList();
-                searchEl.oninput=()=>renderList();
-
-                // Expose methods
-                AdminChat.selectConv = async function(id) {
-                    activeChannelId=id;
-                    activeChannel=channels.find(ch=>ch.id===id);
-                    if(!activeChannel)return;
-                    document.getElementById('chatEmpty').style.display='none';
-                    document.getElementById('activeChatView').style.display='flex';
-                    document.getElementById('activeVisitorName').textContent=activeChannel.data.visitor_name||'Visitor';
-                    document.getElementById('activeVisitorEmail').textContent=activeChannel.data.visitor_email||'';
-                    document.getElementById('activeVisitorPage').textContent=activeChannel.data.visitor_page||'/';
+                if (activeChannel && event.cid === activeChannel.cid) {
                     renderMsgs();
-                    renderList();
-                    try{await activeChannel.markRead();}catch(e){}
-                    setTimeout(renderList,500);
-                    document.getElementById('chatLayout').classList.add('conv-open');
-                };
-                AdminChat.backToList = function(){
-                    document.getElementById('chatLayout').classList.remove('conv-open');
-                    activeChannelId=null;
-                };
-                AdminChat.setFilter = function(f,el){
-                    currentFilter=f;
-                    document.querySelectorAll('.chat-filter-btn').forEach(b=>b.classList.remove('active'));
-                    el.classList.add('active');
-                    renderList();
-                };
-                AdminChat.send = async function(){
-                    const input=document.getElementById('adminInput');
-                    const text=input.value.trim();
-                    if(!text&&!pendingFile)return;
-                    if(!activeChannel)return;
-                    document.getElementById('adminSendBtn').disabled=true;
-                    try{
-                        let att=[];
-                        if(pendingFile){
-                            if(pendingFile.size>10*1024*1024){alert('File must be under 10MB');document.getElementById('adminSendBtn').disabled=false;return;}
-                            const r=await activeChannel.sendFile(pendingFile);
-                            const isImg=pendingFile.type.startsWith('image/');
-                            att.push({type:isImg?'image':'file',[isImg?'image_url':'asset_url']:r.file,title:pendingFile.name,name:pendingFile.name});
-                            AdminChat.clearFile();
-                        }
-                        await activeChannel.sendMessage({text:text||undefined,attachments:att});
-                        input.value='';input.style.height='auto';
-                        renderMsgs();
-                    }catch(e){console.error(e);alert('Send failed');}
-                    finally{document.getElementById('adminSendBtn').disabled=false;}
-                };
-                AdminChat.quickReply = function(text){
-                    document.getElementById('adminInput').value=text;
-                    document.getElementById('adminSendBtn').disabled=false;
-                    document.getElementById('adminInput').focus();
-                };
-                AdminChat.onKeyDown = function(e){
-                    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();AdminChat.send();}
-                    if(activeChannel&&e.key!=='Enter')try{activeChannel.keystroke();}catch(e){}
-                    setTimeout(()=>{document.getElementById('adminSendBtn').disabled=!document.getElementById('adminInput').value.trim()&&!pendingFile;},10);
-                };
-                AdminChat.autoResize = function(el){
-                    el.style.height='auto';
-                    el.style.height=Math.min(el.scrollHeight,80)+'px';
-                    document.getElementById('adminSendBtn').disabled=!el.value.trim()&&!pendingFile;
-                };
-                AdminChat.onFileSelect = function(e){
-                    const file=e.target.files[0];
-                    if(!file)return;
-                    if(file.size>10*1024*1024){alert('Max 10MB');return;}
-                    pendingFile=file;
-                    document.getElementById('adminFileName').textContent=file.name;
-                    document.getElementById('adminFilePreview').style.display='flex';
-                    document.getElementById('adminSendBtn').disabled=false;
-                };
-                AdminChat.clearFile = function(){
-                    pendingFile=null;
-                    document.getElementById('adminFileInput').value='';
-                    document.getElementById('adminFilePreview').style.display='none';
-                    document.getElementById('adminSendBtn').disabled=!document.getElementById('adminInput').value.trim();
-                };
-                AdminChat.resolveChat = async function(){
-                    if(!activeChannel)return;
-                    if(!confirm('Mark as resolved?'))return;
-                    try{
-                        await activeChannel.sendMessage({text:'✅ This conversation has been resolved. Thank you!'});
-                        renderMsgs();
-                    }catch(e){console.error(e);}
-                };
-                AdminChat.filterConversations = renderList;
+                    // Mark as read immediately if we're viewing the conversation
+                    try { activeChannel.markRead(); } catch(e) {}
+                }
+                // Notification for visitor messages
+                if (event.user && event.user.id !== 'asap-admin') {
+                    // Play sound
+                    if (notifSound) try { notifSound.currentTime = 0; notifSound.play(); } catch(e) {}
+                    // Browser notification (when tab is in background)
+                    if (Notification.permission === 'granted' && document.hidden) {
+                        new Notification('💬 ' + (event.user.name || 'Visitor'), {
+                            body: event.message.text || '📎 Attachment',
+                            icon: '/assets/img/logo/logo.jpg',
+                            tag: 'asap-chat-' + event.cid
+                        });
+                    }
+                    // Push notification (when admin is offline — server-side)
+                    triggerPushNotification(event.user.name, event.message.text);
+                }
+            });
 
-            } catch(err) {
-                console.error('Admin chat error:', err);
-                document.getElementById('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Error';
-                document.getElementById('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Connection failed</p><small>Verify Stream API keys in environment</small></div>';
+            client.on('typing.start', event => {
+                if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin')
+                    $('adminTyping').style.display = 'block';
+            });
+            client.on('typing.stop', event => {
+                if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin')
+                    $('adminTyping').style.display = 'none';
+            });
+
+            // Request notification permission
+            if (Notification.permission === 'default') Notification.requestPermission();
+
+        } catch (err) {
+            console.error('Admin chat error:', err);
+            $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Error';
+            $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Connection failed</p><small>Verify Stream API keys in environment</small></div>';
+        }
+
+        // ═══════════════════════════════════════════
+        //  Expose methods on AdminChat
+        // ═══════════════════════════════════════════
+
+        AdminChat.selectConv = async function(id) {
+            activeChannelId = id;
+            activeChannel = channels.find(ch => ch.id === id);
+            if (!activeChannel) return;
+            $('chatEmpty').style.display = 'none';
+            $('activeChatView').style.display = 'flex';
+            $('activeVisitorName').textContent = activeChannel.data.visitor_name || 'Visitor';
+            $('activeVisitorEmail').textContent = activeChannel.data.visitor_email || '';
+            $('activeVisitorPage').textContent = activeChannel.data.visitor_page || '/';
+            renderMsgs();
+            renderList();
+            try { await activeChannel.markRead(); } catch(e) {}
+            setTimeout(renderList, 500);
+            $('chatLayout').classList.add('conv-open');
+        };
+
+        AdminChat.backToList = function() {
+            $('chatLayout').classList.remove('conv-open');
+            activeChannelId = null;
+        };
+
+        AdminChat.setFilter = function(f, el) {
+            currentFilter = f;
+            document.querySelectorAll('.chat-filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            renderList();
+        };
+
+        AdminChat.filterConversations = renderList;
+
+        AdminChat.send = async function() {
+            const input = $('adminInput');
+            const text = input.value.trim();
+            if (!text && !pendingFile) return;
+            if (!activeChannel) return;
+            $('adminSendBtn').disabled = true;
+            try {
+                let att = [];
+                if (pendingFile) {
+                    if (pendingFile.size > 10 * 1024 * 1024) { alert('File must be under 10MB'); $('adminSendBtn').disabled = false; return; }
+                    const r = await activeChannel.sendFile(pendingFile);
+                    const isImg = pendingFile.type.startsWith('image/');
+                    att.push({ type: isImg ? 'image' : 'file', [isImg ? 'image_url' : 'asset_url']: r.file, title: pendingFile.name, name: pendingFile.name });
+                    AdminChat.clearFile();
+                }
+                await activeChannel.sendMessage({ text: text || undefined, attachments: att });
+                input.value = ''; input.style.height = 'auto';
+                renderMsgs();
+            } catch(e) { console.error(e); alert('Send failed'); }
+            finally { $('adminSendBtn').disabled = false; }
+        };
+
+        AdminChat.quickReply = function(text) {
+            $('adminInput').value = text;
+            $('adminSendBtn').disabled = false;
+            $('adminInput').focus();
+        };
+
+        AdminChat.onKeyDown = function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); AdminChat.send(); }
+            if (activeChannel && e.key !== 'Enter') try { activeChannel.keystroke(); } catch(err) {}
+            setTimeout(() => { $('adminSendBtn').disabled = !$('adminInput').value.trim() && !pendingFile; }, 10);
+        };
+
+        AdminChat.autoResize = function(el) {
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 80) + 'px';
+            $('adminSendBtn').disabled = !el.value.trim() && !pendingFile;
+        };
+
+        AdminChat.onFileSelect = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (file.size > 10 * 1024 * 1024) { alert('Max 10MB'); return; }
+            pendingFile = file;
+            $('adminFileName').textContent = file.name;
+            $('adminFilePreview').style.display = 'flex';
+            $('adminSendBtn').disabled = false;
+        };
+
+        AdminChat.clearFile = function() {
+            pendingFile = null;
+            $('adminFileInput').value = '';
+            $('adminFilePreview').style.display = 'none';
+            $('adminSendBtn').disabled = !$('adminInput').value.trim();
+        };
+
+        AdminChat.resolveChat = async function() {
+            if (!activeChannel) return;
+            if (!confirm('Mark as resolved?')) return;
+            try {
+                await activeChannel.sendMessage({ text: '✅ This conversation has been resolved. Thank you!' });
+                renderMsgs();
+            } catch(e) { console.error(e); }
+        };
+
+        // ═══════════════════════════════════════════
+        //  Service Worker + Push Notifications
+        // ═══════════════════════════════════════════
+
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            try {
+                const sw = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+                console.log('[SW] Registered:', sw.scope);
+
+                // Get VAPID public key
+                const vapidRes = await fetch('/api/push/vapid-key');
+                const vapidData = await vapidRes.json();
+                if (!vapidData.publicKey) {
+                    console.warn('[Push] No VAPID key configured');
+                } else {
+                    // Wait for SW to be ready
+                    const registration = await navigator.serviceWorker.ready;
+
+                    // Check existing subscription
+                    let subscription = await registration.pushManager.getSubscription();
+
+                    if (!subscription) {
+                        // Subscribe
+                        const key = vapidData.publicKey;
+                        // Convert VAPID key to Uint8Array
+                        const padding = '='.repeat((4 - key.length % 4) % 4);
+                        const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');
+                        const rawData = atob(base64);
+                        const applicationServerKey = new Uint8Array(rawData.length);
+                        for (let i = 0; i < rawData.length; i++) applicationServerKey[i] = rawData.charCodeAt(i);
+
+                        subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: applicationServerKey
+                        });
+                        console.log('[Push] Subscribed');
+                    }
+
+                    // Send subscription to server
+                    await fetch('/api/push/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ subscription: subscription.toJSON() })
+                    });
+                    console.log('[Push] Subscription saved to server');
+                }
+            } catch (err) {
+                console.warn('[SW/Push] Setup error:', err);
             }
-        })();
+        }
     });
     </script>
 </body>

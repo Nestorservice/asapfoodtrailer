@@ -15,7 +15,7 @@ from fastapi import (
     Depends,
     Header,
 )
-from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response, RedirectResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.gzip import GZipMiddleware
@@ -468,6 +468,112 @@ async def api_chat_admin_token():
         "user_id": "asap-admin",
         "api_key": settings.STREAM_API_KEY,
     }
+
+
+# ═══════════════════════════════════════════════════════════════
+#  PUSH NOTIFICATION ROUTES
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/api/push/vapid-key")
+async def api_vapid_key():
+    """Return the VAPID public key for push subscription."""
+    return {"publicKey": settings.VAPID_PUBLIC_KEY}
+
+
+@app.post("/api/push/subscribe")
+async def api_push_subscribe(request: Request):
+    """Save a push subscription for admin notifications."""
+    body = await request.json()
+    subscription = body.get("subscription", {})
+    endpoint = subscription.get("endpoint", "")
+    keys = subscription.get("keys", {})
+    p256dh = keys.get("p256dh", "")
+    auth = keys.get("auth", "")
+
+    if not endpoint or not p256dh or not auth:
+        raise HTTPException(status_code=400, detail="Invalid subscription data")
+
+    try:
+        db._execute(
+            """INSERT INTO push_subscriptions (endpoint, p256dh, auth, user_type)
+               VALUES (%s, %s, %s, 'admin')
+               ON CONFLICT (endpoint) DO UPDATE SET p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth""",
+            [endpoint, p256dh, auth], fetch="none"
+        )
+        return {"ok": True}
+    except Exception as e:
+        print(f"[ERROR] Push subscribe: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save subscription")
+
+
+@app.post("/api/push/notify")
+async def api_push_notify(request: Request):
+    """Send push notification to all admin subscribers. Called when a new visitor message arrives."""
+    body = await request.json()
+    title = body.get("title", "New Message — ASAP")
+    message_body = body.get("body", "You have a new message")
+    url = body.get("url", "/admin/chat")
+    channel_id = body.get("channelId", "")
+
+    if not settings.VAPID_PRIVATE_KEY or not settings.VAPID_PUBLIC_KEY:
+        return {"ok": False, "reason": "VAPID keys not configured"}
+
+    try:
+        from pywebpush import webpush, WebPushException
+        import json
+
+        subs = db._execute("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_type='admin'")
+        sent = 0
+        failed_endpoints = []
+
+        for sub in (subs or []):
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub["endpoint"],
+                        "keys": {"p256dh": sub["p256dh"], "auth": sub["auth"]}
+                    },
+                    data=json.dumps({
+                        "title": title,
+                        "body": message_body,
+                        "url": url,
+                        "channelId": channel_id,
+                        "icon": "/assets/img/logo/logo.jpg"
+                    }),
+                    vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                    vapid_claims={"sub": settings.VAPID_CLAIMS_EMAIL}
+                )
+                sent += 1
+            except WebPushException as ex:
+                print(f"[Push] Failed: {ex}")
+                if ex.response and ex.response.status_code in (404, 410):
+                    failed_endpoints.append(sub["endpoint"])
+            except Exception as ex:
+                print(f"[Push] Error: {ex}")
+
+        # Clean up expired subscriptions
+        for ep in failed_endpoints:
+            try:
+                db._execute("DELETE FROM push_subscriptions WHERE endpoint=%s", [ep], fetch="none")
+            except Exception:
+                pass
+
+        return {"ok": True, "sent": sent}
+    except ImportError:
+        return {"ok": False, "reason": "pywebpush not installed"}
+    except Exception as e:
+        print(f"[ERROR] Push notify: {e}")
+        return {"ok": False, "reason": str(e)}
+
+
+# Service Worker must be served from root for scope
+@app.get("/sw.js")
+async def service_worker():
+    """Serve the Service Worker from root path for proper scope."""
+    import os
+    sw_path = os.path.join(settings.STATIC_DIR, "js", "sw.js")
+    return FileResponse(sw_path, media_type="application/javascript",
+                        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
 
 
 # ═══════════════════════════════════════════════════════════════
