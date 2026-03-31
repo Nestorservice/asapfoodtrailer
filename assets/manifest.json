@@ -1,0 +1,25 @@
+{
+  "name": "ASAP Food Trailer Admin",
+  "short_name": "ASAP Admin",
+  "description": "Admin panel for ASAP Food Trailer",
+  "start_url": "/admin/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#ff6b00",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/assets/img/logo/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/img/logo/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

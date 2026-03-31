@@ -6,6 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat — ASAP Admin</title>
     <link rel="shortcut icon" href="/assets/img/logo/favicon.svg" type="image/x-icon">
+    <link rel="manifest" href="/assets/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/img/logo/logo.jpg">
+    <meta name="theme-color" content="#ff6b00">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ASAP Admin">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link
@@ -66,7 +72,7 @@
         .chat-header-bar .chat-actions .resolve-btn:hover{background:#198754;color:#fff}
 
         /* Messages area */
-        .admin-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;min-height:0}
+        .admin-messages{flex:1;overflow-y:auto;overflow-y:scroll;padding:20px;display:flex;flex-direction:column;gap:8px;min-height:0;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
         .admin-msg{max-width:70%;display:flex;flex-direction:column}
         .admin-msg.from-visitor{align-self:flex-start}
         .admin-msg.from-admin{align-self:flex-end}
@@ -116,11 +122,11 @@
         @media(max-width:767px){
             /* Use fixed positioning to lock to VISIBLE viewport on mobile Safari */
             .admin-main{position:fixed;top:0;left:0;right:0;bottom:0;height:auto;margin-left:0!important}
-            .chat-layout{position:relative;flex:1;min-height:0}
+            .chat-layout{position:relative;flex:1;min-height:0;overflow:hidden}
             /* Sidebar fills the chat-layout area */
-            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10}
-            /* Chat view also fills the chat-layout area — uses FLEX not absolute */
-            .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11}
+            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;overflow-y:auto}
+            /* Chat view fills the chat-layout — absolute but FLEX inside */
+            .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11;flex-direction:column}
             .chat-layout.conv-open .chat-sidebar{display:none}
             .chat-layout.conv-open .chat-main{display:flex}
             .back-btn{display:inline-flex!important;width:44px;height:44px;align-items:center;justify-content:center}
@@ -131,9 +137,9 @@
             .conv-info .conv-name{font-size:.9rem}
             .chat-search input{font-size:16px;min-height:44px;padding:12px 14px 12px 36px}
             .chat-filter-btn{padding:8px 14px;font-size:.78rem;min-height:36px}
-            .chat-header-bar{padding:10px 14px;flex-wrap:wrap;gap:8px}
+            .chat-header-bar{padding:10px 14px;flex-wrap:wrap;gap:8px;flex-shrink:0}
             .chat-header-bar .chat-actions button{padding:10px 14px;font-size:.82rem;min-height:44px}
-            .admin-messages{padding:12px;-webkit-overflow-scrolling:touch}
+            .admin-messages{padding:12px;-webkit-overflow-scrolling:touch;overflow-y:scroll!important;touch-action:pan-y;min-height:0;flex:1}
             .admin-msg{max-width:88%}
             .admin-msg .msg-bubble{font-size:.9rem;padding:10px 12px}
             .admin-msg .msg-bubble img{max-width:200px}
@@ -316,9 +322,9 @@
         let client = null, channels = [], activeChannel = null, activeChannelId = null;
         let pendingFile = null, currentFilter = 'all';
 
-        // ── Notification sound (short beep) ──
+        // ── Notification sound (custom mp3) ──
         let notifSound = null;
-        try { notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3'); } catch(e) {}
+        try { notifSound = new Audio('/assets/audio/notification.mp3'); notifSound.preload = 'auto'; } catch(e) {}
 
         function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
         function fmtTime(d) {
