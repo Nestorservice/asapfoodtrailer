@@ -324,7 +324,7 @@
 
         // ── Notification sound (custom mp3) ──
         let notifSound = null;
-        try { notifSound = new Audio('/assets/audio/notification.mp3'); notifSound.preload = 'auto'; } catch(e) {}
+        try { notifSound = new Audio('/assets/audio/notification.wav'); notifSound.preload = 'auto'; } catch(e) {}
 
         function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
         function fmtTime(d) {

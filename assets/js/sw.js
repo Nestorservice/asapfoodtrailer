@@ -1,8 +1,8 @@
 /* ─── ASAP Food Trailer — Service Worker ─── */
 /* Handles push notifications when the admin is offline */
 
-const CACHE_NAME = 'asap-admin-v1';
-const NOTIFICATION_SOUND_URL = '/assets/audio/notification.mp3';
+const CACHE_NAME = 'asap-admin-v2';
+const NOTIFICATION_SOUND_URL = '/assets/audio/notification.wav';
 
 // Install
 self.addEventListener('install', event => {
