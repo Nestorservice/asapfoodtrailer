@@ -921,6 +921,22 @@
                 // Request push notification permission
                 this.requestPushPermission();
 
+                // Helper: notify admin via push when visitor sends a message
+                function notifyAdmin(text) {
+                    try {
+                        const stored = JSON.parse(localStorage.getItem('asap_chat_visitor') || '{}');
+                        fetch('/api/push/notify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                title: '💬 ' + (stored.name || 'Visitor'),
+                                body: text || '📎 Attachment',
+                                url: '/admin/chat'
+                            })
+                        }).catch(() => {});
+                    } catch(e) {}
+                }
+
                 try {
                     // Get token
                     const tokenRes = await fetch('/api/chat/token', {
@@ -956,6 +972,7 @@
                     // Send welcome message if channel is new
                     if (chData.created) {
                         await channel.sendMessage({ text: `Hi! I'm ${name}. I'm browsing ${window.location.pathname}` });
+                        notifyAdmin(`Hi! I'm ${name}. I'm browsing ${window.location.pathname}`);
                     }
 
                     localStorage.setItem('asap_chat_visitor', JSON.stringify({ name, email, connected: true }));
@@ -1028,6 +1045,7 @@
                         msgPayload.quoted_message_id = replyToMsg.id;
                     }
                     const msg = await channel.sendMessage(msgPayload);
+                    notifyAdmin(text || '📎 Attachment');
                     renderMessage(msg.message);
                     replyToMsg = null;
                     $('replyPreview').classList.remove('show');
@@ -1373,6 +1391,7 @@
                                     duration: recSeconds
                                 }]
                             });
+                            notifyAdmin('🎤 Voice Message');
                         } catch (err) {
                             console.error('Voice send error:', err);
                             showError('Failed to send voice message');
