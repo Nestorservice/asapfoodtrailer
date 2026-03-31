@@ -13,13 +13,18 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <style>
+        /* ─── Force chat page to fill viewport exactly ─── */
+        body{height:100vh;height:100dvh;overflow:hidden}
+        .admin-main{height:100vh;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+        .admin-topbar{flex-shrink:0}
+
         /* ─── Chat Page Layout ─── */
-        .chat-layout{display:flex;height:calc(100vh - 64px);overflow:hidden}
+        .chat-layout{display:flex;flex:1;min-height:0;overflow:hidden}
         .chat-sidebar{width:360px;border-right:1px solid #eee;display:flex;flex-direction:column;background:#fff;flex-shrink:0}
-        .chat-main{flex:1;display:flex;flex-direction:column;background:#f8f9fa}
+        .chat-main{flex:1;display:flex;flex-direction:column;background:#f8f9fa;min-height:0}
 
         /* Top Stats */
-        .chat-stats{display:flex;gap:16px;padding:16px 20px;border-bottom:1px solid #eee;background:#fff;flex-wrap:wrap}
+        .chat-stats{display:flex;gap:16px;padding:16px 20px;border-bottom:1px solid #eee;background:#fff;flex-wrap:wrap;flex-shrink:0}
         .chat-stat-item{text-align:center;flex:1;min-width:100px}
         .chat-stat-item h4{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.3rem;color:#1a1a2e;margin:0}
         .chat-stat-item small{font-size:.72rem;color:#999;font-weight:500}
@@ -76,7 +81,7 @@
         .admin-typing{display:none;padding:6px 20px;color:#999;font-size:.78rem;font-style:italic}
 
         /* Input */
-        .admin-input-area{padding:12px 20px;background:#fff;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px}
+        .admin-input-area{padding:12px 20px;background:#fff;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
         .quick-replies{display:flex;gap:6px;flex-wrap:wrap}
         .quick-reply-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.72rem;background:#fff;color:#666;cursor:pointer;transition:all .2s;white-space:nowrap}
         .quick-reply-btn:hover{background:#ff6b00;color:#fff;border-color:#ff6b00}
@@ -108,7 +113,8 @@
 
         /* ─── Mobile (< 768px) ─── */
         @media(max-width:767px){
-            .chat-layout{height:calc(100vh - 56px);height:calc(100dvh - 56px);position:relative}
+            .admin-main{height:100vh;height:100dvh}
+            .chat-layout{position:relative;flex:1;min-height:0}
             .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;height:100%}
             .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11}
             .chat-layout.conv-open .chat-sidebar{display:none}
