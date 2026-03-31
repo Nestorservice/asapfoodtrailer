@@ -616,6 +616,22 @@
             notifSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2LkZqTi4J7dH2GjpGNhX53cXJ4gYiKiIR+eXZ1eH6EiImGgXx4dnZ6gISHh4WAfHh2d3t/g4aGhIB8eHd3e3+DhoaEgHx4d3d7f4OGhoSAfHh3d3t/g4aGhIB8eHd3');
         } catch(e) {}
 
+        // Helper: notify admin via push when visitor sends a message
+        function notifyAdmin(text) {
+            try {
+                const stored = JSON.parse(localStorage.getItem('asap_chat_visitor') || '{}');
+                fetch('/api/push/notify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: '💬 ' + (stored.name || 'Visitor'),
+                        body: text || '📎 Attachment',
+                        url: '/admin/chat'
+                    })
+                }).catch(() => {});
+            } catch(e) {}
+        }
+
         function $(id) { return document.getElementById(id); }
 
         function showError(msg) {
@@ -921,21 +937,6 @@
                 // Request push notification permission
                 this.requestPushPermission();
 
-                // Helper: notify admin via push when visitor sends a message
-                function notifyAdmin(text) {
-                    try {
-                        const stored = JSON.parse(localStorage.getItem('asap_chat_visitor') || '{}');
-                        fetch('/api/push/notify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                title: '💬 ' + (stored.name || 'Visitor'),
-                                body: text || '📎 Attachment',
-                                url: '/admin/chat'
-                            })
-                        }).catch(() => {});
-                    } catch(e) {}
-                }
 
                 try {
                     // Get token
