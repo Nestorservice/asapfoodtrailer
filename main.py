@@ -525,8 +525,12 @@ async def api_push_notify(request: Request):
         subs = db._execute("SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE user_type='admin'")
         sent = 0
         failed_endpoints = []
+        total = len(subs or [])
+
+        print(f"[Push] Sending to {total} subscriber(s)...")
 
         for sub in (subs or []):
+            ep_domain = sub["endpoint"].split("/")[2] if len(sub["endpoint"].split("/")) > 2 else "?"
             try:
                 webpush(
                     subscription_info={
@@ -544,21 +548,26 @@ async def api_push_notify(request: Request):
                     vapid_claims={"sub": settings.VAPID_CLAIMS_EMAIL}
                 )
                 sent += 1
+                print(f"[Push] ✓ Sent to {ep_domain}")
             except WebPushException as ex:
-                print(f"[Push] Failed: {ex}")
-                if ex.response and ex.response.status_code in (404, 410):
+                status = ex.response.status_code if ex.response else 0
+                print(f"[Push] ✗ Failed for {ep_domain}: HTTP {status} — {ex}")
+                # Clean up stale/invalid subscriptions
+                if status in (401, 403, 404, 410):
                     failed_endpoints.append(sub["endpoint"])
             except Exception as ex:
-                print(f"[Push] Error: {ex}")
+                print(f"[Push] ✗ Error for {ep_domain}: {ex}")
 
         # Clean up expired subscriptions
         for ep in failed_endpoints:
             try:
                 db._execute("DELETE FROM push_subscriptions WHERE endpoint=%s", [ep], fetch="none")
+                print(f"[Push] Cleaned up stale subscription")
             except Exception:
                 pass
 
-        return {"ok": True, "sent": sent}
+        print(f"[Push] Done: {sent}/{total} sent, {len(failed_endpoints)} cleaned")
+        return {"ok": True, "sent": sent, "total": total, "cleaned": len(failed_endpoints)}
     except ImportError:
         return {"ok": False, "reason": "pywebpush not installed"}
     except Exception as e:
