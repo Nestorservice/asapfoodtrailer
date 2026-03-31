@@ -566,6 +566,27 @@ async def api_push_notify(request: Request):
         return {"ok": False, "reason": str(e)}
 
 
+@app.get("/api/push/status")
+async def api_push_status():
+    """Diagnostic: check how many push subscriptions are saved."""
+    try:
+        subs = db._execute("SELECT id, endpoint, user_type, created_at FROM push_subscriptions ORDER BY created_at DESC")
+        result = []
+        for s in (subs or []):
+            # Show only domain of endpoint for privacy
+            ep = s.get("endpoint", "")
+            domain = ep.split("/")[2] if len(ep.split("/")) > 2 else "unknown"
+            result.append({
+                "id": s.get("id"),
+                "endpoint_domain": domain,
+                "user_type": s.get("user_type"),
+                "created_at": str(s.get("created_at", ""))
+            })
+        return {"total": len(result), "subscriptions": result}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 # Service Worker must be served from root for scope
 @app.get("/sw.js")
 async def service_worker():
