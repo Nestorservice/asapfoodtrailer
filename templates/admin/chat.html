@@ -13,10 +13,11 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <style>
-        /* ─── Force chat page to fill viewport exactly ─── */
-        body{height:100vh;height:100dvh;overflow:hidden}
-        .admin-main{height:100vh;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+        /* ─── Force chat page to fill VISIBLE viewport exactly ─── */
+        html,body{margin:0;padding:0;height:100%;overflow:hidden}
+        .admin-main{height:100%;display:flex;flex-direction:column;overflow:hidden}
         .admin-topbar{flex-shrink:0}
+        .chat-header-bar{flex-shrink:0}
 
         /* ─── Chat Page Layout ─── */
         .chat-layout{display:flex;flex:1;min-height:0;overflow:hidden}
@@ -54,7 +55,7 @@
         .conv-meta .conv-unread{width:20px;height:20px;border-radius:50%;background:#dc3545;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center}
 
         /* Chat Main Area */
-        .chat-header-bar{padding:14px 20px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between}
+        .chat-header-bar{padding:14px 20px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
         .chat-header-bar .visitor-info{display:flex;align-items:center;gap:12px}
         .chat-header-bar .visitor-info h6{margin:0;font-weight:700;font-size:.95rem}
         .chat-header-bar .visitor-info span{font-size:.75rem;color:#999}
@@ -65,7 +66,7 @@
         .chat-header-bar .chat-actions .resolve-btn:hover{background:#198754;color:#fff}
 
         /* Messages area */
-        .admin-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
+        .admin-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px;min-height:0}
         .admin-msg{max-width:70%;display:flex;flex-direction:column}
         .admin-msg.from-visitor{align-self:flex-start}
         .admin-msg.from-admin{align-self:flex-end}
@@ -78,9 +79,9 @@
         .admin-msg .msg-bubble .file-link{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,.06);border-radius:8px;margin-top:4px;text-decoration:none;color:inherit;font-size:.8rem;font-weight:500}
         .admin-msg.from-admin .msg-bubble .file-link{background:rgba(255,255,255,.15);color:#fff}
 
-        .admin-typing{display:none;padding:6px 20px;color:#999;font-size:.78rem;font-style:italic}
+        .admin-typing{display:none;padding:6px 20px;color:#999;font-size:.78rem;font-style:italic;flex-shrink:0}
 
-        /* Input */
+        /* Input — always pinned at bottom */
         .admin-input-area{padding:12px 20px;background:#fff;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
         .quick-replies{display:flex;gap:6px;flex-wrap:wrap}
         .quick-reply-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.72rem;background:#fff;color:#666;cursor:pointer;transition:all .2s;white-space:nowrap}
@@ -113,9 +114,12 @@
 
         /* ─── Mobile (< 768px) ─── */
         @media(max-width:767px){
-            .admin-main{height:100vh;height:100dvh}
+            /* Use fixed positioning to lock to VISIBLE viewport on mobile Safari */
+            .admin-main{position:fixed;top:0;left:0;right:0;bottom:0;height:auto;margin-left:0!important}
             .chat-layout{position:relative;flex:1;min-height:0}
-            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;height:100%}
+            /* Sidebar fills the chat-layout area */
+            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10}
+            /* Chat view also fills the chat-layout area — uses FLEX not absolute */
             .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11}
             .chat-layout.conv-open .chat-sidebar{display:none}
             .chat-layout.conv-open .chat-main{display:flex}
@@ -154,6 +158,26 @@
             .back-btn{display:none!important}
         }
     </style>
+    <script>
+    /* iOS viewport height fix: sets --vh to actual visible height */
+    function setVH(){
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', vh + 'px');
+        /* Also directly set admin-main height to window.innerHeight */
+        const main = document.querySelector('.admin-main');
+        if(main) main.style.height = window.innerHeight + 'px';
+    }
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', () => setTimeout(setVH, 150));
+    /* Handle virtual keyboard on mobile */
+    if(window.visualViewport){
+        window.visualViewport.addEventListener('resize', () => {
+            const main = document.querySelector('.admin-main');
+            if(main) main.style.height = window.visualViewport.height + 'px';
+        });
+    }
+    </script>
 </head>
 
 <body>
