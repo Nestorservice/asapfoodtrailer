@@ -1,9 +1,8 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Chat — ASAP Admin</title>
     <link rel="shortcut icon" href="/assets/img/logo/favicon.svg" type="image/x-icon">
     <link rel="manifest" href="/assets/manifest.json">
@@ -11,651 +10,152 @@
     <meta name="theme-color" content="#ff6b00">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ASAP Admin">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="/assets/css/admin.css">
-    <style>
-        /* ─── Force chat page to fill VISIBLE viewport exactly ─── */
-        html,body{margin:0;padding:0;height:100%;overflow:hidden}
-        .admin-main{height:100%;display:flex;flex-direction:column;overflow:hidden}
-        .admin-topbar{flex-shrink:0}
-        .chat-header-bar{flex-shrink:0}
-
-        /* ─── Chat Page Layout ─── */
-        .chat-layout{display:flex;flex:1;min-height:0;overflow:hidden}
-        .chat-sidebar{width:360px;border-right:1px solid #eee;display:flex;flex-direction:column;background:#fff;flex-shrink:0}
-        .chat-main{flex:1;display:flex;flex-direction:column;background:#f8f9fa;min-height:0}
-
-        /* Top Stats */
-        .chat-stats{display:flex;gap:16px;padding:16px 20px;border-bottom:1px solid #eee;background:#fff;flex-wrap:wrap;flex-shrink:0}
-        .chat-stat-item{text-align:center;flex:1;min-width:100px}
-        .chat-stat-item h4{font-family:'Outfit',sans-serif;font-weight:800;font-size:1.3rem;color:#1a1a2e;margin:0}
-        .chat-stat-item small{font-size:.72rem;color:#999;font-weight:500}
-
-        /* Search + Filters */
-        .chat-search{padding:12px 16px;border-bottom:1px solid #eee}
-        .chat-search input{width:100%;padding:10px 14px 10px 36px;border:1px solid #e5e5e5;border-radius:10px;font-size:.85rem;outline:none;background:#f8f9fa url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23999" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 10-1.397 1.398h-.001l3.85 3.85a1 1 0 001.415-1.414l-3.867-3.834zm-5.242.656a5 5 0 110-10 5 5 0 010 10z"/></svg>') no-repeat 12px center;transition:border-color .2s}
-        .chat-search input:focus{border-color:#ff6b00;background-color:#fff}
-        .chat-filters{display:flex;gap:6px;margin-top:8px}
-        .chat-filter-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.75rem;font-weight:600;background:#fff;color:#777;cursor:pointer;transition:all .2s}
-        .chat-filter-btn:hover,.chat-filter-btn.active{background:#ff6b00;color:#fff;border-color:#ff6b00}
-
-        /* Conversation List */
-        .conv-list{flex:1;overflow-y:auto}
-        .conv-item{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .2s;position:relative}
-        .conv-item:hover,.conv-item.active{background:#fff5ee}
-        .conv-item.active{border-left:3px solid #ff6b00}
-        .conv-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff8c33);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;position:relative}
-        .conv-avatar .online-dot{position:absolute;bottom:1px;right:1px;width:10px;height:10px;border-radius:50%;background:#4ade80;border:2px solid #fff}
-        .conv-info{flex:1;min-width:0}
-        .conv-info .conv-name{font-weight:700;font-size:.88rem;color:#1a1a2e;display:flex;align-items:center;gap:6px}
-        .conv-info .conv-name .conv-email{font-weight:400;font-size:.72rem;color:#999}
-        .conv-info .conv-last-msg{font-size:.8rem;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
-        .conv-info .conv-page{font-size:.68rem;color:#aaa;margin-top:2px}
-        .conv-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-        .conv-meta .conv-time{font-size:.68rem;color:#bbb}
-        .conv-meta .conv-unread{width:20px;height:20px;border-radius:50%;background:#dc3545;color:#fff;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center}
-
-        /* Chat Main Area */
-        .chat-header-bar{padding:14px 20px;background:#fff;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-        .chat-header-bar .visitor-info{display:flex;align-items:center;gap:12px}
-        .chat-header-bar .visitor-info h6{margin:0;font-weight:700;font-size:.95rem}
-        .chat-header-bar .visitor-info span{font-size:.75rem;color:#999}
-        .chat-header-bar .chat-actions{display:flex;gap:6px}
-        .chat-header-bar .chat-actions button{padding:6px 14px;border-radius:8px;font-size:.78rem;font-weight:600;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:5px}
-        .chat-header-bar .chat-actions button:hover{background:#f0f0f0}
-        .chat-header-bar .chat-actions .resolve-btn{border-color:#198754;color:#198754}
-        .chat-header-bar .chat-actions .resolve-btn:hover{background:#198754;color:#fff}
-
-        /* Messages area */
-        .admin-messages{flex:1;overflow-y:auto;overflow-y:scroll;padding:20px;display:flex;flex-direction:column;gap:8px;min-height:0;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain}
-        .admin-msg{max-width:70%;display:flex;flex-direction:column}
-        .admin-msg.from-visitor{align-self:flex-start}
-        .admin-msg.from-admin{align-self:flex-end}
-        .admin-msg .msg-bubble{padding:10px 14px;border-radius:14px;font-size:.88rem;line-height:1.5}
-        .admin-msg.from-visitor .msg-bubble{background:#fff;color:#333;box-shadow:0 1px 4px rgba(0,0,0,.06);border-bottom-left-radius:4px}
-        .admin-msg.from-admin .msg-bubble{background:#ff6b00;color:#fff;border-bottom-right-radius:4px}
-        .admin-msg .msg-meta{font-size:.68rem;color:#bbb;margin-top:3px}
-        .admin-msg.from-admin .msg-meta{text-align:right}
-        .admin-msg .msg-bubble img{max-width:260px;border-radius:8px;margin-top:4px;cursor:pointer}
-        .admin-msg .msg-bubble .file-link{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,0,0,.06);border-radius:8px;margin-top:4px;text-decoration:none;color:inherit;font-size:.8rem;font-weight:500}
-        .admin-msg.from-admin .msg-bubble .file-link{background:rgba(255,255,255,.15);color:#fff}
-
-        .admin-typing{display:none;padding:6px 20px;color:#999;font-size:.78rem;font-style:italic;flex-shrink:0}
-
-        /* Input — always pinned at bottom */
-        .admin-input-area{padding:12px 20px;background:#fff;border-top:1px solid #eee;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-        .quick-replies{display:flex;gap:6px;flex-wrap:wrap}
-        .quick-reply-btn{padding:4px 12px;border:1px solid #e5e5e5;border-radius:20px;font-size:.72rem;background:#fff;color:#666;cursor:pointer;transition:all .2s;white-space:nowrap}
-        .quick-reply-btn:hover{background:#ff6b00;color:#fff;border-color:#ff6b00}
-        .admin-input-row{display:flex;gap:8px;align-items:flex-end}
-        .admin-input-row textarea{flex:1;border:1px solid #e5e5e5;border-radius:12px;padding:10px 14px;font-size:.88rem;font-family:'Inter',sans-serif;resize:none;max-height:80px;min-height:40px;outline:none;transition:border-color .2s}
-        .admin-input-row textarea:focus{border-color:#ff6b00}
-        .admin-input-row button{width:40px;height:40px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
-        .admin-send-btn{background:#ff6b00;color:#fff;font-size:1rem}
-        .admin-send-btn:hover{background:#e05e00}
-        .admin-send-btn:disabled{background:#ccc;cursor:not-allowed}
-        .admin-attach-btn{background:#f0f0f0;color:#666;font-size:.9rem}
-        .admin-attach-btn:hover{background:#e5e5e5}
-        .admin-file-preview{display:none;padding:4px 8px;background:#f0f0f0;border-radius:8px;font-size:.78rem;align-items:center;gap:6px}
-        .admin-file-preview span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .admin-file-preview button{background:none;border:none;color:#999;cursor:pointer}
-
-        /* Empty state */
-        .chat-empty{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#ccc}
-        .chat-empty i{font-size:4rem;margin-bottom:12px}
-        .chat-empty p{font-size:1rem;font-weight:600;color:#aaa}
-        .chat-empty small{color:#ccc;font-size:.85rem}
-
-        /* Loading */
-        .chat-loading{display:flex;align-items:center;justify-content:center;flex:1;color:#999}
-        .chat-loading .spinner-border{width:24px;height:24px;border-width:3px}
-
-        /* Badge in sidebar nav */
-        .nav-chat-badge{background:#dc3545;color:#fff;font-size:.6rem;font-weight:700;padding:2px 6px;border-radius:10px;margin-left:auto}
-
-        /* ─── Mobile (< 768px) ─── */
-        @media(max-width:767px){
-            /* Use fixed positioning to lock to VISIBLE viewport on mobile Safari */
-            .admin-main{position:fixed;top:0;left:0;right:0;bottom:0;height:auto;margin-left:0!important}
-            .chat-layout{position:relative;flex:1;min-height:0;overflow:hidden}
-            /* Sidebar fills the chat-layout area */
-            .chat-sidebar{width:100%;position:absolute;top:0;left:0;right:0;bottom:0;z-index:10;overflow-y:auto}
-            /* Chat view fills the chat-layout — absolute but FLEX inside */
-            .chat-main{position:absolute;top:0;left:0;right:0;bottom:0;display:none;z-index:11;flex-direction:column}
-            .chat-layout.conv-open .chat-sidebar{display:none}
-            .chat-layout.conv-open .chat-main{display:flex}
-            .back-btn{display:inline-flex!important;width:44px;height:44px;align-items:center;justify-content:center}
-            .chat-stats{padding:10px 14px;gap:10px}
-            .chat-stat-item h4{font-size:1.1rem}
-            .conv-item{padding:12px 14px;min-height:64px}
-            .conv-avatar{width:44px;height:44px}
-            .conv-info .conv-name{font-size:.9rem}
-            .chat-search input{font-size:16px;min-height:44px;padding:12px 14px 12px 36px}
-            .chat-filter-btn{padding:8px 14px;font-size:.78rem;min-height:36px}
-            .chat-header-bar{padding:10px 14px;flex-wrap:wrap;gap:8px;flex-shrink:0}
-            .chat-header-bar .chat-actions button{padding:10px 14px;font-size:.82rem;min-height:44px}
-            .admin-messages{padding:12px;-webkit-overflow-scrolling:touch;overflow-y:scroll!important;touch-action:pan-y;min-height:0;flex:1}
-            .admin-msg{max-width:88%}
-            .admin-msg .msg-bubble{font-size:.9rem;padding:10px 12px}
-            .admin-msg .msg-bubble img{max-width:200px}
-            .admin-input-area{padding:10px 12px;padding-bottom:max(10px, env(safe-area-inset-bottom))}
-            .admin-input-row textarea{font-size:16px;min-height:44px;padding:10px 12px}
-            .admin-input-row button{width:44px;height:44px}
-            .admin-attach-btn{width:44px;height:44px;font-size:1.1rem}
-            .quick-replies{gap:4px;overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px;-webkit-overflow-scrolling:touch}
-            .quick-reply-btn{padding:8px 14px;font-size:.75rem;min-height:36px;flex-shrink:0}
-            .admin-file-preview{padding:6px 10px}
-            .admin-file-preview button{width:36px;height:36px}
-        }
-        /* ─── Tablet (768px - 1024px) ─── */
-        @media(min-width:768px) and (max-width:1024px){
-            .chat-sidebar{width:280px}
-            .chat-header-bar .chat-actions button{min-height:40px}
-            .admin-input-row button{width:42px;height:42px}
-            .back-btn{display:none!important}
-        }
-        /* ─── Desktop (> 1024px) ─── */
-        @media(min-width:1025px){
-            .back-btn{display:none!important}
-        }
-    </style>
-    <script>
-    /* iOS viewport height fix: sets --vh to actual visible height */
-    function setVH(){
-        const vh = window.innerHeight * 0.01;
-        document.documentElement.style.setProperty('--vh', vh + 'px');
-        /* Also directly set admin-main height to window.innerHeight */
-        const main = document.querySelector('.admin-main');
-        if(main) main.style.height = window.innerHeight + 'px';
-    }
-    setVH();
-    window.addEventListener('resize', setVH);
-    window.addEventListener('orientationchange', () => setTimeout(setVH, 150));
-    /* Handle virtual keyboard on mobile */
-    if(window.visualViewport){
-        window.visualViewport.addEventListener('resize', () => {
-            const main = document.querySelector('.admin-main');
-            if(main) main.style.height = window.visualViewport.height + 'px';
-        });
-    }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/css/admin-chat.css">
 </head>
-
 <body>
-    <!-- Sidebar -->
-    <aside class="admin-sidebar" id="adminSidebar">
-        <div class="sidebar-header">
-            <img src="/assets/img/logo/logo.jpg" alt="ASAP" class="sidebar-logo" style="height:32px;border-radius:6px;">
-            <button class="sidebar-close d-lg-none" onclick="toggleSidebar()"><i class="bi bi-x-lg"></i></button>
-        </div>
-        <nav class="sidebar-nav">
-            <a href="/admin/dashboard" class="nav-item"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-            <a href="/admin/inventory" class="nav-item"><i class="bi bi-truck"></i> Inventory</a>
-            <a href="/admin/leads" class="nav-item"><i class="bi bi-person-lines-fill"></i> Leads</a>
-            <a href="/admin/chat" class="nav-item active"><i class="bi bi-chat-dots"></i> Chat <span class="nav-chat-badge" id="sidebarBadge" style="display:none">0</span></a>
-            <a href="/admin/testimonials" class="nav-item"><i class="bi bi-images"></i> Testimonials</a>
-            <a href="/admin/settings" class="nav-item"><i class="bi bi-gear"></i> Settings</a>
-            <div class="nav-divider"></div>
-            <a href="/" class="nav-item"><i class="bi bi-globe"></i> View Website</a>
-            <a href="/admin" class="nav-item" style="color:#ff6b6b;"><i class="bi bi-box-arrow-left"></i> Sign Out</a>
-        </nav>
-    </aside>
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
-
-    <!-- Main -->
     <main class="admin-main">
-        <div class="admin-topbar">
-            <div class="d-flex align-items-center gap-3">
-                <button class="topbar-toggle d-lg-none" onclick="toggleSidebar()"><i class="bi bi-list"></i></button>
-                <h5 class="mb-0" style="font-family:'Outfit',sans-serif;font-weight:800;">Live Chat</h5>
-            </div>
-            <div class="topbar-right d-flex align-items-center gap-3">
-                <span id="connectionStatus" style="color:#999;font-size:.78rem;"><i class="bi bi-circle-fill" style="color:#ccc;font-size:.5rem;"></i> Connecting...</span>
-            </div>
-        </div>
-
-        <!-- Chat Stats Bar -->
-        <div class="chat-stats">
-            <div class="chat-stat-item">
-                <h4 id="statTotal">0</h4>
-                <small>Total Chats</small>
-            </div>
-            <div class="chat-stat-item">
-                <h4 id="statUnread">0</h4>
-                <small>Unread</small>
-            </div>
-            <div class="chat-stat-item">
-                <h4 id="statToday">0</h4>
-                <small>Today</small>
-            </div>
-        </div>
-
-        <!-- Chat Layout -->
-        <div class="chat-layout" id="chatLayout">
-            <!-- LEFT: Conversations List -->
-            <div class="chat-sidebar">
-                <div class="chat-search">
-                    <input type="text" id="convSearch" placeholder="Search conversations..." oninput="AdminChat.filterConversations()">
-                    <div class="chat-filters">
-                        <button class="chat-filter-btn active" data-filter="all" onclick="AdminChat.setFilter('all',this)">All</button>
-                        <button class="chat-filter-btn" data-filter="unread" onclick="AdminChat.setFilter('unread',this)">Unread</button>
-                        <button class="chat-filter-btn" data-filter="active" onclick="AdminChat.setFilter('active',this)">Active</button>
+        <div class="admin-chat-container">
+            <!-- LIST PANELS -->
+            <div class="admin-conversations-list" id="convListPanel">
+                <div class="admin-conv-header">
+                    <div class="header-top">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <a href="/admin/dashboard" title="Retour Dashboard" style="color: var(--text-muted); font-size: 1.2rem;"><i class="bi bi-arrow-left"></i></a>
+                            <h5>💬 Conversations</h5>
+                        </div>
+                        <div class="header-actions">
+                            <button onclick="AdminChat.toggleGlobalNotifications()" title="Notifications" id="btnNotifGlobal"><i class="bi bi-bell-fill"></i></button>
+                            <button onclick="AdminChat.showGlobalMenu(event)" title="Options"><i class="bi bi-three-dots-vertical"></i></button>
+                        </div>
+                    </div>
+                    <div class="search-container">
+                        <input type="text" id="convSearch" placeholder="Rechercher...">
+                        <i class="bi bi-search search-icon"></i>
+                    </div>
+                    <div class="filters-container">
+                        <button class="filter-btn active" data-filter="all" onclick="AdminChat.setFilter('all')">Tous</button>
+                        <button class="filter-btn" data-filter="unread" onclick="AdminChat.setFilter('unread')">Non lus <span class="badge" id="unreadBadgeTotal" style="display:none">0</span></button>
                     </div>
                 </div>
-                <div class="conv-list" id="convList">
-                    <div class="chat-loading"><div class="spinner-border text-secondary" role="status"></div></div>
+                
+                <div class="admin-conversations-scroll" id="convList">
+                    <div class="chat-empty-state"><div class="spinner-border text-success"></div></div>
                 </div>
             </div>
 
-            <!-- RIGHT: Chat Window -->
-            <div class="chat-main" id="chatMain">
-                <div class="chat-empty" id="chatEmpty">
-                    <i class="bi bi-chat-square-text"></i>
-                    <p>Select a conversation</p>
-                    <small>Choose a chat from the left panel to start responding</small>
+            <!-- CHAT WINDOW -->
+            <div class="admin-chat-window" id="chatWindow">
+                <div id="noConvSelected" class="chat-empty-state">
+                    <i class="bi bi-chat-dots"></i>
+                    <p>Sélectionnez une conversation</p>
+                    <span style="font-size: 0.9rem; margin-top: 10px;">Connecté en tant que support ASAP</span>
                 </div>
-
-                <!-- Active chat (hidden until selected) -->
-                <div id="activeChatView" style="display:none;flex-direction:column;flex:1">
-                    <div class="chat-header-bar">
-                        <div class="visitor-info">
-                            <button class="back-btn btn btn-sm btn-outline-secondary" onclick="AdminChat.backToList()" style="border-radius:8px;display:none;"><i class="bi bi-arrow-left"></i></button>
-                            <div>
-                                <h6 id="activeVisitorName">Visitor</h6>
-                                <span id="activeVisitorEmail">email@example.com</span>
-                                <span> · </span>
-                                <span id="activeVisitorPage" style="color:#ff6b00;font-weight:500;">/</span>
+                
+                <div id="activeConvArea" style="display:none; height:100%; flex-direction:column;">
+                    <div class="admin-chat-header">
+                        <div class="header-left" onclick="AdminChat.toggleVisitorInfo()">
+                            <button class="back-btn" onclick="AdminChat.closeConv(event)"><i class="bi bi-arrow-left"></i></button>
+                            <div class="header-avatar" id="activeAvatar"></div>
+                            <div class="visitor-info-header">
+                                <div class="visitor-name" id="activeName"></div>
+                                <div class="visitor-status" id="activeStatus">En ligne</div>
                             </div>
                         </div>
-                        <div class="chat-actions">
-                            <button class="resolve-btn" onclick="AdminChat.resolveChat()"><i class="bi bi-check-circle"></i> Resolve</button>
+                        <div class="header-right">
+                            <button onclick="AdminChat.showConvSearch(event)" title="Rechercher"><i class="bi bi-search"></i></button>
+                            <button onclick="AdminChat.showConvMenu(event)" title="Options"><i class="bi bi-three-dots-vertical"></i></button>
                         </div>
                     </div>
 
-                    <div class="admin-messages" id="adminMessages"></div>
-                    <div class="admin-typing" id="adminTyping"><i class="bi bi-three-dots"></i> Visitor is typing...</div>
+                    <div class="admin-chat-messages" id="chatMessages" onscroll="AdminChat.onScroll()">
+                        <!-- Populated by JS -->
+                    </div>
+                    
+                    <div class="scroll-badge" id="scrollBadge" onclick="AdminChat.scrollToBottom()" style="display:none">↓ Nouveaux messages</div>
 
-                    <div class="admin-input-area">
-                        <div class="quick-replies">
-                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Hello! 👋 How can I help you today?')">👋 Greeting</button>
-                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Sure! Let me get that information for you right away.')">📋 Info</button>
-                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Would you like to schedule a visit to see this truck in person?')">📅 Schedule</button>
-                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('For the best price, give us a call at +1 (201) 645-3364!')">📞 Call us</button>
-                            <button class="quick-reply-btn" onclick="AdminChat.quickReply('Thank you for chatting with us! Don\'t hesitate to reach out anytime. 🚛')">👏 Thanks</button>
+                    <div class="chat-typing-indicator" id="chatTyping" style="display:none; padding: 4px 5%; font-size: 0.8rem; color: var(--text-muted); font-style: italic;">
+                        En train d'écrire...
+                    </div>
+
+                    <!-- Previews -->
+                    <div class="chat-reply-preview" id="replyPreview">
+                        <div class="rp-content">
+                            <div class="rp-name" id="replyName"></div>
+                            <div class="rp-text" id="replyText"></div>
                         </div>
-                        <div class="admin-file-preview" id="adminFilePreview">
-                            <i class="bi bi-paperclip"></i>
-                            <span id="adminFileName"></span>
-                            <button onclick="AdminChat.clearFile()"><i class="bi bi-x"></i></button>
+                        <button class="rp-close" onclick="AdminChat.cancelReply()"><i class="bi bi-x"></i></button>
+                    </div>
+
+                    <div class="chat-file-preview" id="chatFilePreview">
+                        <span id="chatFileName"></span>
+                        <button onclick="AdminChat.clearFile()"><i class="bi bi-x-circle-fill" style="font-size: 1.2rem; color: var(--text-muted)"></i></button>
+                    </div>
+                    
+                    <!-- Quick Replies -->
+                    <div class="quick-replies-panel" id="qrPanel" style="display:none;">
+                        <div class="qr-header">
+                            <span>⚡ Réponses Rapides</span>
+                            <button onclick="AdminChat.toggleQRPanel()"><i class="bi bi-x"></i></button>
                         </div>
-                        <div class="admin-input-row">
-                            <button class="admin-attach-btn" onclick="document.getElementById('adminFileInput').click()"><i class="bi bi-paperclip"></i></button>
-                            <textarea id="adminInput" rows="1" placeholder="Type your reply..." onkeydown="AdminChat.onKeyDown(event)" oninput="AdminChat.autoResize(this)"></textarea>
-                            <button class="admin-send-btn" id="adminSendBtn" onclick="AdminChat.send()" disabled><i class="bi bi-send-fill"></i></button>
+                        <div class="qr-list" id="qrList">
+                            <div style="padding: 20px; text-align: center; color: #999;">Chargement...</div>
                         </div>
-                        <input type="file" id="adminFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*" onchange="AdminChat.onFileSelect(event)">
+                        <div class="qr-add">
+                            <input type="text" id="newQRInput" placeholder="Nouvelle réponse type..." onkeydown="if(event.key==='Enter') AdminChat.addQuickReply()">
+                            <button onclick="AdminChat.addQuickReply()"><i class="bi bi-plus-lg"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="admin-chat-input-area" id="inputArea">
+                        <button class="action-btn" onclick="AdminChat.toggleQRPanel()" title="Réponses Rapides">⚡</button>
+                        <button class="action-btn attach-btn" onclick="document.getElementById('chatFileInput').click()" title="Joindre un document/image"><i class="bi bi-paperclip"></i></button>
+                        <input type="file" id="chatFileInput" style="display:none" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,video/*" onchange="AdminChat.onFileSelect(event)">
+                        
+                        <div class="input-wrapper">
+                            <textarea id="chatInput" placeholder="Écrivez un message..." rows="1" oninput="AdminChat.autoResize(this)" onkeydown="AdminChat.onKeyDown(event)"></textarea>
+                        </div>
+                        
+                        <button class="action-btn voice-btn" id="voiceBtn" onclick="AdminChat.toggleRecording()"><i class="bi bi-mic-fill"></i></button>
+                        <button class="send-btn" id="chatSendBtn" disabled onclick="AdminChat.send()"><i class="bi bi-send-fill"></i></button>
+                    </div>
+                    
+                    <!-- Recording Overlay -->
+                    <div class="recording-ui" id="recordingUI" style="display:none;">
+                        <div class="rec-blink"></div>
+                        <span class="rec-time" id="recTime">0:00</span>
+                        <canvas class="rec-visualizer" id="recCanvas" width="100" height="30"></canvas>
+                        <button class="rec-cancel" onclick="AdminChat.cancelRecording()"><i class="bi bi-trash-fill"></i></button>
+                        <button class="rec-send" onclick="AdminChat.stopAndSendRecording()"><i class="bi bi-send-fill" style="margin-right:2px"></i></button>
+                    </div>
+                </div>
+                
+                <!-- Visitor Info Panel -->
+                <div class="visitor-info-panel" id="visitorInfoPanel">
+                    <div class="vip-header">
+                        <button onclick="AdminChat.toggleVisitorInfo()"><i class="bi bi-x"></i></button>
+                        <h5>Infos Contact</h5>
+                    </div>
+                    <div class="vip-content" id="vipContent">
+                        <!-- Populated dynamically -->
                     </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Image Lightbox -->
+        <div class="chat-lightbox" id="chatLightbox" onclick="AdminChat.closeLightbox()" style="display:none; position:fixed; top:0;left:0;right:0;bottom:0; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center;">
+            <button style="position:absolute; top:20px; right:20px; background:none; border:none; color:white; font-size:2rem; cursor:pointer;" onclick="AdminChat.closeLightbox()"><i class="bi bi-x-lg"></i></button>
+            <img id="lightboxImg" src="" style="max-width:90%; max-height:80vh; object-fit:contain;">
+            <a id="lightboxDl" href="" download target="_blank" style="color:white; text-decoration:none; margin-top:20px; font-size:1.1rem;"><i class="bi bi-download"></i> Télécharger</a>
         </div>
     </main>
 
-    <!-- Stream Chat SDK -->
+
     <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.14.0/dist/browser.full-bundle.min.js"></script>
-    <script>
-    function toggleSidebar(){
-        document.getElementById('adminSidebar').classList.toggle('open');
-        document.getElementById('sidebarOverlay').classList.toggle('show');
-    }
-
-    /* ─── Admin Chat Controller ─── */
-    const AdminChat = {};
-
-    document.addEventListener('DOMContentLoaded', async () => {
-        const $ = id => document.getElementById(id);
-
-        let client = null, channels = [], activeChannel = null, activeChannelId = null;
-        let pendingFile = null, currentFilter = 'all';
-
-        // ── Notification sound (custom mp3) ──
-        let notifSound = null;
-        try { notifSound = new Audio('/assets/audio/notification.wav'); notifSound.preload = 'auto'; } catch(e) {}
-
-        function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
-        function fmtTime(d) {
-            if (!d) return '';
-            const date = new Date(d), now = new Date();
-            if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            return date.toLocaleDateString([], {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        }
-        function getInitials(name) { return (name||'V').split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2); }
-
-        // ── Render conversation list ──
-        function renderList() {
-            const search = ($('convSearch').value || '').toLowerCase();
-            let filtered = channels;
-            if (search) filtered = filtered.filter(ch => {
-                const n = (ch.data.visitor_name || '').toLowerCase(), e = (ch.data.visitor_email || '').toLowerCase();
-                return n.includes(search) || e.includes(search);
-            });
-            if (currentFilter === 'unread') filtered = filtered.filter(ch => ch.countUnread() > 0);
-
-            let unreadTotal = 0, todayCount = 0;
-            const today = new Date().toDateString();
-            channels.forEach(ch => {
-                unreadTotal += ch.countUnread();
-                if (ch.data.created_at && new Date(ch.data.created_at).toDateString() === today) todayCount++;
-            });
-            $('statTotal').textContent = channels.length;
-            $('statUnread').textContent = unreadTotal;
-            $('statToday').textContent = todayCount;
-            const badge = $('sidebarBadge');
-            if (unreadTotal > 0) { badge.textContent = unreadTotal; badge.style.display = 'inline'; } else { badge.style.display = 'none'; }
-            document.title = unreadTotal > 0 ? `(${unreadTotal}) Chat — ASAP Admin` : 'Chat — ASAP Admin';
-
-            if (!filtered.length) {
-                $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-inbox" style="font-size:2rem"></i><p style="font-size:.85rem">No conversations</p></div>';
-                return;
-            }
-            $('convList').innerHTML = filtered.map(ch => {
-                const d = ch.data, name = d.visitor_name || 'Visitor', email = d.visitor_email || '', page = d.visitor_page || '/';
-                const lm = ch.state.messages.length ? ch.state.messages[ch.state.messages.length - 1] : null;
-                const lt = lm ? (lm.text || '📎 Attachment') : 'No messages';
-                const t = lm ? fmtTime(lm.created_at) : '';
-                const u = ch.countUnread();
-                const act = ch.id === activeChannelId;
-                return `<div class="conv-item ${act ? 'active' : ''}" onclick="AdminChat.selectConv('${ch.id}')">
-                    <div class="conv-avatar">${getInitials(name)}</div>
-                    <div class="conv-info">
-                        <div class="conv-name">${esc(name)} <span class="conv-email">${esc(email)}</span></div>
-                        <div class="conv-last-msg">${esc(lt)}</div>
-                        <div class="conv-page"><i class="bi bi-geo-alt" style="font-size:.6rem"></i> ${esc(page)}</div>
-                    </div>
-                    <div class="conv-meta"><span class="conv-time">${t}</span>${u > 0 ? `<span class="conv-unread">${u}</span>` : ''}</div>
-                </div>`;
-            }).join('');
-        }
-
-        // ── Render messages ──
-        function renderMsgs() {
-            if (!activeChannel) return;
-            const el = $('adminMessages');
-            el.innerHTML = '';
-            activeChannel.state.messages.forEach(msg => {
-                const isA = msg.user && msg.user.id === 'asap-admin';
-                const d = document.createElement('div');
-                d.className = 'admin-msg ' + (isA ? 'from-admin' : 'from-visitor');
-                let c = '';
-                if (msg.text) c += `<span>${esc(msg.text)}</span>`;
-                if (msg.attachments && msg.attachments.length) {
-                    msg.attachments.forEach(att => {
-                        if (att.type === 'image') c += `<img src="${att.image_url || att.thumb_url || att.asset_url}" alt="" onclick="window.open(this.src,'_blank')">`;
-                        else c += `<a class="file-link" href="${att.asset_url || '#'}" target="_blank"><i class="bi bi-file-earmark"></i> ${esc(att.title || att.name || 'File')}</a>`;
-                    });
-                }
-                d.innerHTML = `<div class="msg-bubble">${c}</div><div class="msg-meta">${fmtTime(msg.created_at)}</div>`;
-                el.appendChild(d);
-            });
-            el.scrollTop = el.scrollHeight;
-        }
-
-        // ── Send push notification to server ──
-        async function triggerPushNotification(visitorName, messageText) {
-            try {
-                await fetch('/api/push/notify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: '💬 ' + (visitorName || 'Visitor'),
-                        body: messageText || '📎 Attachment',
-                        url: '/admin/chat',
-                        channelId: activeChannelId || ''
-                    })
-                });
-            } catch (e) { console.warn('[Push] Trigger failed:', e); }
-        }
-
-        // ── Connect to Stream Chat ──
-        try {
-            const res = await fetch('/api/chat/admin-token');
-            if (!res.ok) throw new Error('Token fetch failed');
-            const data = await res.json();
-
-            client = new StreamChat(data.api_key);
-            await client.connectUser({ id: data.user_id, name: 'ASAP Support' }, data.token);
-            $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#4ade80;font-size:.5rem;"></i> Connected';
-
-            const filter = { type: 'messaging', members: { $in: ['asap-admin'] } };
-            const sort = [{ field: 'last_message_at', direction: -1 }];
-            channels = await client.queryChannels(filter, sort, { watch: true, state: true, limit: 50 });
-
-            renderList();
-            $('convSearch').oninput = () => renderList();
-
-            // ── Event listeners ──
-            client.on('message.new', event => {
-                renderList();
-                if (activeChannel && event.cid === activeChannel.cid) {
-                    renderMsgs();
-                    // Mark as read immediately if we're viewing the conversation
-                    try { activeChannel.markRead(); } catch(e) {}
-                }
-                // Notification for visitor messages
-                if (event.user && event.user.id !== 'asap-admin') {
-                    // Play sound
-                    if (notifSound) try { notifSound.currentTime = 0; notifSound.play(); } catch(e) {}
-                    // Browser notification (when tab is in background)
-                    if (Notification.permission === 'granted' && document.hidden) {
-                        new Notification('💬 ' + (event.user.name || 'Visitor'), {
-                            body: event.message.text || '📎 Attachment',
-                            icon: '/assets/img/logo/logo.jpg',
-                            tag: 'asap-chat-' + event.cid
-                        });
-                    }
-                    // Push notification (when admin is offline — server-side)
-                    triggerPushNotification(event.user.name, event.message.text);
-                }
-            });
-
-            client.on('typing.start', event => {
-                if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin')
-                    $('adminTyping').style.display = 'block';
-            });
-            client.on('typing.stop', event => {
-                if (activeChannel && event.cid === activeChannel.cid && event.user.id !== 'asap-admin')
-                    $('adminTyping').style.display = 'none';
-            });
-
-            // Request notification permission
-            if (Notification.permission === 'default') Notification.requestPermission();
-
-        } catch (err) {
-            console.error('Admin chat error:', err);
-            $('connectionStatus').innerHTML = '<i class="bi bi-circle-fill" style="color:#dc3545;font-size:.5rem;"></i> Error';
-            $('convList').innerHTML = '<div class="chat-empty" style="padding:40px"><i class="bi bi-exclamation-triangle" style="font-size:2rem;color:#ffc107"></i><p style="font-size:.85rem">Connection failed</p><small>Verify Stream API keys in environment</small></div>';
-        }
-
-        // ═══════════════════════════════════════════
-        //  Expose methods on AdminChat
-        // ═══════════════════════════════════════════
-
-        AdminChat.selectConv = async function(id) {
-            activeChannelId = id;
-            activeChannel = channels.find(ch => ch.id === id);
-            if (!activeChannel) return;
-            $('chatEmpty').style.display = 'none';
-            $('activeChatView').style.display = 'flex';
-            $('activeVisitorName').textContent = activeChannel.data.visitor_name || 'Visitor';
-            $('activeVisitorEmail').textContent = activeChannel.data.visitor_email || '';
-            $('activeVisitorPage').textContent = activeChannel.data.visitor_page || '/';
-            renderMsgs();
-            renderList();
-            try { await activeChannel.markRead(); } catch(e) {}
-            setTimeout(renderList, 500);
-            $('chatLayout').classList.add('conv-open');
-        };
-
-        AdminChat.backToList = function() {
-            $('chatLayout').classList.remove('conv-open');
-            activeChannelId = null;
-        };
-
-        AdminChat.setFilter = function(f, el) {
-            currentFilter = f;
-            document.querySelectorAll('.chat-filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            renderList();
-        };
-
-        AdminChat.filterConversations = renderList;
-
-        AdminChat.send = async function() {
-            const input = $('adminInput');
-            const text = input.value.trim();
-            if (!text && !pendingFile) return;
-            if (!activeChannel) return;
-            $('adminSendBtn').disabled = true;
-            try {
-                let att = [];
-                if (pendingFile) {
-                    if (pendingFile.size > 10 * 1024 * 1024) { alert('File must be under 10MB'); $('adminSendBtn').disabled = false; return; }
-                    const r = await activeChannel.sendFile(pendingFile);
-                    const isImg = pendingFile.type.startsWith('image/');
-                    att.push({ type: isImg ? 'image' : 'file', [isImg ? 'image_url' : 'asset_url']: r.file, title: pendingFile.name, name: pendingFile.name });
-                    AdminChat.clearFile();
-                }
-                await activeChannel.sendMessage({ text: text || undefined, attachments: att });
-                input.value = ''; input.style.height = 'auto';
-                renderMsgs();
-            } catch(e) { console.error(e); alert('Send failed'); }
-            finally { $('adminSendBtn').disabled = false; }
-        };
-
-        AdminChat.quickReply = function(text) {
-            $('adminInput').value = text;
-            $('adminSendBtn').disabled = false;
-            $('adminInput').focus();
-        };
-
-        AdminChat.onKeyDown = function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); AdminChat.send(); }
-            if (activeChannel && e.key !== 'Enter') try { activeChannel.keystroke(); } catch(err) {}
-            setTimeout(() => { $('adminSendBtn').disabled = !$('adminInput').value.trim() && !pendingFile; }, 10);
-        };
-
-        AdminChat.autoResize = function(el) {
-            el.style.height = 'auto';
-            el.style.height = Math.min(el.scrollHeight, 80) + 'px';
-            $('adminSendBtn').disabled = !el.value.trim() && !pendingFile;
-        };
-
-        AdminChat.onFileSelect = function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 10 * 1024 * 1024) { alert('Max 10MB'); return; }
-            pendingFile = file;
-            $('adminFileName').textContent = file.name;
-            $('adminFilePreview').style.display = 'flex';
-            $('adminSendBtn').disabled = false;
-        };
-
-        AdminChat.clearFile = function() {
-            pendingFile = null;
-            $('adminFileInput').value = '';
-            $('adminFilePreview').style.display = 'none';
-            $('adminSendBtn').disabled = !$('adminInput').value.trim();
-        };
-
-        AdminChat.resolveChat = async function() {
-            if (!activeChannel) return;
-            if (!confirm('Mark as resolved?')) return;
-            try {
-                await activeChannel.sendMessage({ text: '✅ This conversation has been resolved. Thank you!' });
-                renderMsgs();
-            } catch(e) { console.error(e); }
-        };
-
-        // ═══════════════════════════════════════════
-        //  Service Worker + Push Notifications
-        // ═══════════════════════════════════════════
-
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            try {
-                const sw = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-                console.log('[SW] Registered:', sw.scope);
-
-                // Get VAPID public key
-                const vapidRes = await fetch('/api/push/vapid-key');
-                const vapidData = await vapidRes.json();
-                if (!vapidData.publicKey) {
-                    console.warn('[Push] No VAPID key configured');
-                } else {
-                    // Wait for SW to be ready
-                    const registration = await navigator.serviceWorker.ready;
-
-                    // Convert VAPID key to Uint8Array
-                    const key = vapidData.publicKey;
-                    const padding = '='.repeat((4 - key.length % 4) % 4);
-                    const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');
-                    const rawData = atob(base64);
-                    const applicationServerKey = new Uint8Array(rawData.length);
-                    for (let i = 0; i < rawData.length; i++) applicationServerKey[i] = rawData.charCodeAt(i);
-
-                    // Check existing subscription
-                    let oldSub = await registration.pushManager.getSubscription();
-                    let needsSubscribe = true;
-
-                    if (oldSub) {
-                        try {
-                            const currentKeyArray = new Uint8Array(oldSub.options.applicationServerKey);
-                            let keysMatch = currentKeyArray.length === applicationServerKey.length;
-                            if (keysMatch) {
-                                for (let i = 0; i < currentKeyArray.length; ++i) {
-                                    if (currentKeyArray[i] !== applicationServerKey[i]) {
-                                        keysMatch = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!keysMatch) {
-                                await oldSub.unsubscribe();
-                                console.log('[Push] Unsubscribed due to VAPID key change');
-                            } else {
-                                needsSubscribe = false;
-                                console.log('[Push] Existing subscription is valid');
-                            }
-                        } catch(e) {
-                            await oldSub.unsubscribe();
-                        }
-                    }
-
-                    let subscription = oldSub;
-                    if (needsSubscribe) {
-                        subscription = await registration.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: applicationServerKey
-                        });
-                        console.log('[Push] Subscribed fresh');
-                    }
-
-                    // Send subscription to server
-                    await fetch('/api/push/subscribe', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ subscription: subscription.toJSON() })
-                    });
-                    console.log('[Push] Subscription saved to server');
-                }
-            } catch (err) {
-                console.warn('[SW/Push] Setup error:', err);
-            }
-        }
-    });
-    </script>
+    <script src="/assets/js/admin-chat.js"></script>
 </body>
 </html>

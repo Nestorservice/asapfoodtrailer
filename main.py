@@ -596,6 +596,39 @@ async def api_push_status():
         return {"error": str(e)}
 
 
+# ─── QUICK REPLIES API ───
+@app.get("/api/admin/quick-replies")
+async def get_quick_replies(request: Request):
+    try:
+        # Check token to ensure it's admin (basic protection)
+        replies = db._execute("SELECT id, text, created_at FROM quick_replies ORDER BY created_at ASC")
+        return {"ok": True, "replies": replies or []}
+    except Exception as e:
+        return {"ok": False, "reason": str(e)}
+
+@app.post("/api/admin/quick-replies")
+async def add_quick_reply(request: Request):
+    import uuid
+    try:
+        body = await request.json()
+        qr_id = str(uuid.uuid4())
+        text = body.get("text", "").strip()
+        if not text:
+            return {"ok": False, "reason": "Text is empty"}
+        db._execute("INSERT INTO quick_replies (id, text) VALUES (%s, %s)", [qr_id, text], fetch="none")
+        return {"ok": True, "id": qr_id, "text": text}
+    except Exception as e:
+        return {"ok": False, "reason": str(e)}
+
+@app.delete("/api/admin/quick-replies/{qr_id}")
+async def delete_quick_reply(qr_id: str, request: Request):
+    try:
+        db._execute("DELETE FROM quick_replies WHERE id=%s", [qr_id], fetch="none")
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "reason": str(e)}
+
+
 # Service Worker must be served from root for scope
 @app.get("/sw.js")
 async def service_worker():

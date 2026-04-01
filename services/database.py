@@ -183,6 +183,12 @@ class DatabaseService:
                         created_at TIMESTAMPTZ DEFAULT NOW()
                     );
 
+                    CREATE TABLE IF NOT EXISTS quick_replies (
+                        id TEXT PRIMARY KEY,
+                        text TEXT NOT NULL,
+                        created_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+
                     CREATE INDEX IF NOT EXISTS idx_trucks_status ON trucks(status);
                     CREATE INDEX IF NOT EXISTS idx_trucks_featured ON trucks(featured);
                     CREATE INDEX IF NOT EXISTS idx_trucks_category ON trucks(category);
