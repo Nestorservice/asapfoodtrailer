@@ -598,14 +598,7 @@
                     // Wait for SW to be ready
                     const registration = await navigator.serviceWorker.ready;
 
-                    // Always unsubscribe old and re-subscribe (fixes stale VAPID key issues)
-                    let oldSub = await registration.pushManager.getSubscription();
-                    if (oldSub) {
-                        await oldSub.unsubscribe();
-                        console.log('[Push] Unsubscribed old subscription');
-                    }
-
-                    // Subscribe fresh
+                    // Convert VAPID key to Uint8Array
                     const key = vapidData.publicKey;
                     const padding = '='.repeat((4 - key.length % 4) % 4);
                     const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -613,11 +606,42 @@
                     const applicationServerKey = new Uint8Array(rawData.length);
                     for (let i = 0; i < rawData.length; i++) applicationServerKey[i] = rawData.charCodeAt(i);
 
-                    const subscription = await registration.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: applicationServerKey
-                    });
-                    console.log('[Push] Subscribed');
+                    // Check existing subscription
+                    let oldSub = await registration.pushManager.getSubscription();
+                    let needsSubscribe = true;
+
+                    if (oldSub) {
+                        try {
+                            const currentKeyArray = new Uint8Array(oldSub.options.applicationServerKey);
+                            let keysMatch = currentKeyArray.length === applicationServerKey.length;
+                            if (keysMatch) {
+                                for (let i = 0; i < currentKeyArray.length; ++i) {
+                                    if (currentKeyArray[i] !== applicationServerKey[i]) {
+                                        keysMatch = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!keysMatch) {
+                                await oldSub.unsubscribe();
+                                console.log('[Push] Unsubscribed due to VAPID key change');
+                            } else {
+                                needsSubscribe = false;
+                                console.log('[Push] Existing subscription is valid');
+                            }
+                        } catch(e) {
+                            await oldSub.unsubscribe();
+                        }
+                    }
+
+                    let subscription = oldSub;
+                    if (needsSubscribe) {
+                        subscription = await registration.pushManager.subscribe({
+                            userVisibleOnly: true,
+                            applicationServerKey: applicationServerKey
+                        });
+                        console.log('[Push] Subscribed fresh');
+                    }
 
                     // Send subscription to server
                     await fetch('/api/push/subscribe', {
