@@ -247,7 +247,7 @@ html, body {
 /* ─── Media Queries ─── */
 @media (max-width: 767px) {
     .admin-conversations-list { width: 100%; max-width: none; border-right: none; }
-    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 50; width: 100%; }
+    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 50; width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); box-sizing: border-box; }
     .admin-chat-window.active { transform: translateX(0); }
     .back-btn { display: block; }
     .header-avatar { width: 36px; height: 36px; }
