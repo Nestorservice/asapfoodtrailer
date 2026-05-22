@@ -790,7 +790,10 @@ const AdminChat = (function() {
 document.addEventListener('DOMContentLoaded', () => {
     AdminChat.init();
     if ('serviceWorker' in navigator && 'PushManager' in window) {
-        Notification.requestPermission().then(p => { if(p === 'granted') AdminChat.setupWebPush(); });
+        navigator.serviceWorker.register('/sw.js')
+            .then(() => Notification.requestPermission())
+            .then(p => { if (p === 'granted') AdminChat.setupWebPush(); })
+            .catch(e => console.error('[SW] Registration failed:', e));
     }
 });
 

@@ -467,25 +467,36 @@ class DatabaseService:
         truck_data["id"] = str(uuid.uuid4())
         truck_data["created_at"] = datetime.now(timezone.utc).isoformat()
         truck_data["views"] = 0
-        try:
-            self._execute("""
-                INSERT INTO trucks (id, title, slug, description, price, category, condition, usage, status, featured, specs, images, views, created_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            """, [
-                truck_data["id"], truck_data.get("title", ""),
-                truck_data.get("slug", ""), truck_data.get("description", ""),
-                truck_data.get("price", 0), truck_data.get("category", "truck"),
-                truck_data.get("condition", "new"), truck_data.get("usage", "sale"),
-                truck_data.get("status", "available"), truck_data.get("featured", False),
-                json.dumps(truck_data.get("specs", {})),
-                json.dumps(truck_data.get("images", [])),
-                0, truck_data["created_at"]
-            ], fetch="none")
-            self._cache_invalidate("trucks:")
-            self._cache_invalidate("featured:")
-            self._cache_invalidate("fleet_stats")
-        except Exception as e:
-            print(f"[ERROR] create_truck: {e}")
+
+        # Ensure slug uniqueness — suffix with counter if conflict
+        base_slug = truck_data.get("slug", "truck") or "truck"
+        slug = base_slug
+        counter = 2
+        while True:
+            existing = self._execute("SELECT id FROM trucks WHERE slug = %s", [slug], fetch="one")
+            if not existing:
+                break
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+        truck_data["slug"] = slug
+
+        # Let exceptions propagate so the API can return a proper error
+        self._execute("""
+            INSERT INTO trucks (id, title, slug, description, price, category, condition, usage, status, featured, specs, images, views, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, [
+            truck_data["id"], truck_data.get("title", ""),
+            truck_data["slug"], truck_data.get("description", ""),
+            truck_data.get("price", 0), truck_data.get("category", "truck"),
+            truck_data.get("condition", "new"), truck_data.get("usage", "sale"),
+            truck_data.get("status", "available"), truck_data.get("featured", False),
+            json.dumps(truck_data.get("specs", {})),
+            json.dumps(truck_data.get("images", [])),
+            0, truck_data["created_at"]
+        ], fetch="none")
+        self._cache_invalidate("trucks:")
+        self._cache_invalidate("featured:")
+        self._cache_invalidate("fleet_stats")
         return truck_data
 
     def update_truck(self, truck_id: str, update_data: dict) -> Optional[dict]:

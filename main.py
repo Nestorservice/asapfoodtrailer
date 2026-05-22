@@ -771,7 +771,11 @@ async def api_create_truck(
         "images": image_urls if image_urls else ["/assets/img/trucks/placeholder.jpg"],
     }
 
-    truck = db.create_truck(truck_data)
+    try:
+        truck = db.create_truck(truck_data)
+    except Exception as e:
+        print(f"[ERROR] api_create_truck: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save vehicle: {str(e)}")
     return {"success": True, "truck": truck}
 
 
