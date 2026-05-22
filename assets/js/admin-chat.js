@@ -699,12 +699,41 @@ const AdminChat = (function() {
             const closeMenu = ev => { if(!menu.contains(ev.target)) { menu.remove(); document.removeEventListener('click', closeMenu); } };
             setTimeout(() => document.addEventListener('click', closeMenu), 10);
         },
-        toggleGlobalNotifications: function() {
-            if(notifSound) {
-                notifSound = null;
-                alert("Notifications sonores désactivées pour cette session.");
-            } else {
-                try { notifSound = new Audio('/assets/audio/notification.wav'); notifSound.preload='auto'; alert("Son activé."); }catch(e){}
+        toggleGlobalNotifications: async function() {
+            const btn = $('btnNotifGlobal');
+            if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+                alert('Notifications non supportées.\nSur iPhone : ouvrez dans Safari et installez via "Sur l\'écran d\'accueil".');
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                alert('Notifications bloquées.\n\nPour les activer :\nRéglages → ASAP Admin → Notifications → Autoriser les notifications → ON');
+                return;
+            }
+            if (btn) btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+            try {
+                const p = await Notification.requestPermission();
+                if (p !== 'granted') {
+                    if (btn) btn.innerHTML = '<i class="bi bi-bell-slash-fill"></i>';
+                    alert('Permission refusée.\nVa dans Réglages → ASAP Admin → Notifications pour activer.');
+                    return;
+                }
+                const ok = await AdminChat.setupWebPush();
+                if (ok) {
+                    if (btn) { btn.innerHTML = '<i class="bi bi-bell-fill"></i>'; btn.style.color = '#4CAF50'; }
+                    // Send test so the user immediately sees if it works
+                    await fetch('/api/push/notify', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ title: '✅ ASAP Admin', body: 'Notifications activées ! Mets l\'appli en arrière-plan pour les voir.' })
+                    });
+                    setTimeout(() => { if (btn) btn.style.color = ''; }, 5000);
+                } else {
+                    if (btn) btn.innerHTML = '<i class="bi bi-bell-slash-fill"></i>';
+                    alert('Échec de l\'abonnement push.\nOuvre la console (F12) pour voir l\'erreur exacte.');
+                }
+            } catch(e) {
+                if (btn) btn.innerHTML = '<i class="bi bi-bell-fill"></i>';
+                alert('Erreur : ' + e.message);
+                console.error('[Notif setup]', e);
             }
         },
         deleteAllHistory: function() {
@@ -747,16 +776,18 @@ const AdminChat = (function() {
             p.classList.toggle('open');
         },
 
-        // Web Push Auto-subscribe
+        // Web Push setup — returns true if subscription saved successfully
         setupWebPush: async function() {
             try {
-                // Fetch public key
+                console.log('[Push] Fetching VAPID key...');
                 const req = await fetch('/api/push/vapid-key');
-                if(!req.ok) return;
+                if (!req.ok) { console.error('[Push] VAPID fetch failed:', req.status); return false; }
                 const vapidData = await req.json();
-                if(!vapidData || !vapidData.publicKey) return;
+                if (!vapidData || !vapidData.publicKey) { console.error('[Push] No public key in response'); return false; }
 
                 const reg = await navigator.serviceWorker.ready;
+                console.log('[Push] SW ready, state:', reg.active ? reg.active.state : 'none');
+
                 const key = vapidData.publicKey;
                 const padding = '='.repeat((4 - key.length % 4) % 4);
                 const base64 = (key + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -765,6 +796,7 @@ const AdminChat = (function() {
                 for (let i = 0; i < rawData.length; i++) authKey[i] = rawData.charCodeAt(i);
 
                 let oldSub = await reg.pushManager.getSubscription();
+                console.log('[Push] Existing subscription:', oldSub ? oldSub.endpoint.split('/').slice(0,3).join('/') : 'none');
                 let needsSubscribe = true;
 
                 if (oldSub) {
@@ -772,17 +804,41 @@ const AdminChat = (function() {
                         const curKeyArray = new Uint8Array(oldSub.options.applicationServerKey);
                         let match = curKeyArray.length === authKey.length;
                         if (match) {
-                            for(let i=0; i<curKeyArray.length; ++i) { if(curKeyArray[i] !== authKey[i]) { match=false; break; } }
+                            for (let i = 0; i < curKeyArray.length; ++i) { if (curKeyArray[i] !== authKey[i]) { match = false; break; } }
                         }
-                        if (!match) await oldSub.unsubscribe();
-                        else needsSubscribe = false;
-                    } catch(e) { await oldSub.unsubscribe(); }
+                        if (!match) {
+                            console.log('[Push] VAPID key changed, unsubscribing old...');
+                            await oldSub.unsubscribe();
+                            oldSub = null;
+                        } else {
+                            needsSubscribe = false;
+                            console.log('[Push] Reusing existing subscription');
+                        }
+                    } catch(e) { await oldSub.unsubscribe(); oldSub = null; }
                 }
 
                 let sub = oldSub;
-                if (needsSubscribe) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: authKey });
-                if(sub) await fetch('/api/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ subscription: sub.toJSON() }) });
-            } catch(e) {}
+                if (needsSubscribe) {
+                    console.log('[Push] Subscribing to push manager...');
+                    sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: authKey });
+                    console.log('[Push] New subscription created:', sub.endpoint.split('/').slice(0,3).join('/'));
+                }
+
+                if (sub) {
+                    const resp = await fetch('/api/push/subscribe', {
+                        method: 'POST', headers: {'Content-Type':'application/json'},
+                        body: JSON.stringify({ subscription: sub.toJSON() })
+                    });
+                    const result = await resp.json();
+                    console.log('[Push] Server save result:', result);
+                    return result.ok === true;
+                }
+                console.error('[Push] No subscription object after setup');
+                return false;
+            } catch(e) {
+                console.error('[Push] Setup error:', e.name, '-', e.message);
+                return false;
+            }
         }
     };
 })();
