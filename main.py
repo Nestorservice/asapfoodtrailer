@@ -551,8 +551,14 @@ async def api_push_notify(request: Request):
                 print(f"[Push] ✓ Sent to {ep_domain}")
             except WebPushException as ex:
                 status = ex.response.status_code if ex.response else 0
+                # pywebpush sometimes returns status 0 but the message contains the real code
+                if status == 0:
+                    msg = str(ex)
+                    for code in (410, 404, 401, 403):
+                        if str(code) in msg:
+                            status = code
+                            break
                 print(f"[Push] ✗ Failed for {ep_domain}: HTTP {status} — {ex}")
-                # Clean up stale/invalid subscriptions
                 if status in (401, 403, 404, 410):
                     failed_endpoints.append(sub["endpoint"])
             except Exception as ex:
