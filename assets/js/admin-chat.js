@@ -113,18 +113,46 @@ const AdminChat = (function() {
         }).join('');
     }
 
+    function formatDateDivider(date) {
+        if (!date) return '';
+        const d = new Date(date);
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const diffDays = Math.round((today - target) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return "Aujourd'hui";
+        if (diffDays === 1) return "Hier";
+        if (diffDays < 7 && diffDays > 1) {
+            const dayName = d.toLocaleDateString('fr-FR', { weekday: 'long' });
+            return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+        }
+        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
     function renderMsgs() {
         if(!activeChannel) return;
         const el = $('chatMessages');
         el.innerHTML = '';
         
-        let lastDate = null;
-        let lastAuthor = null;
-        const msgs = activeChannel.state.messages;
+        let lastDateStr = null;
+        // Sort messages strictly chronologically by arrival timestamp (oldest first at top, newest at bottom - WhatsApp style)
+        const msgs = [...activeChannel.state.messages].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
 
         for(let i=0; i<msgs.length; i++) {
             const msg = msgs[i];
             if(msg._localDeleted) continue; // skip locally deleted
+
+            // WhatsApp Style Date Divider
+            const msgDate = new Date(msg.created_at);
+            const dateStr = formatDateDivider(msgDate);
+            if(dateStr && dateStr !== lastDateStr) {
+                lastDateStr = dateStr;
+                const dateDiv = document.createElement('div');
+                dateDiv.className = 'chat-date-divider';
+                dateDiv.innerHTML = `<span>${esc(dateStr)}</span>`;
+                el.appendChild(dateDiv);
+            }
 
             const isA = msg.user && msg.user.id === 'asap-admin';
             const div = document.createElement('div');
@@ -237,8 +265,10 @@ const AdminChat = (function() {
 
             el.appendChild(div);
         }
-        // Auto scroll down
-        el.scrollTop = el.scrollHeight;
+        // Auto scroll down to latest message
+        setTimeout(() => {
+            el.scrollTop = el.scrollHeight;
+        }, 50);
         $('scrollBadge').style.display = 'none';
     }
 
