@@ -316,6 +316,34 @@
         </div>
     </main>
 
+    <!-- Glassmorphic Mobile Bottom Navbar -->
+    <nav class="admin-mobile-navbar">
+        <a href="/admin/dashboard" class="mobile-nav-item">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Stats</span>
+        </a>
+        <a href="/admin/inventory" class="mobile-nav-item">
+            <i class="bi bi-truck"></i>
+            <span>Stock</span>
+        </a>
+        <a href="/admin/leads" class="mobile-nav-item">
+            <i class="bi bi-person-lines-fill"></i>
+            <span>Leads</span>
+        </a>
+        <a href="/admin/chat" class="mobile-nav-item">
+            <div class="mobile-nav-icon-wrap">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span class="mobile-nav-badge" id="mobileNavChatBadge" style="display:none;">0</span>
+            </div>
+            <span>Chat</span>
+        </a>
+        <a href="/admin/settings" class="mobile-nav-item">
+            <i class="bi bi-gear-fill"></i>
+            <span>Réglages</span>
+        </a>
+    </nav>
+    <script src="/assets/js/admin-global.js"></script>
+
     <!-- Delete Confirmation Modal (must be before script) -->
     <div class="modal fade" id="deleteTestimonialModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered" style="max-width:400px;">

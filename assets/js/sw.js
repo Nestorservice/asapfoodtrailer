@@ -49,6 +49,12 @@ self.addEventListener('push', event => {
         console.error('[SW] Push parse error:', e);
     }
 
+    // Update App Badge on PWA icon
+    if ('setAppBadge' in self) {
+        const unreadCount = data.unreadCount || 1;
+        self.setAppBadge(unreadCount).catch(e => {});
+    }
+
     event.waitUntil(
         self.registration.showNotification(data.title, {
             body: data.body,

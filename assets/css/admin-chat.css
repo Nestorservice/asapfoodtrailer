@@ -80,7 +80,27 @@ html, body {
 
 .admin-chat-header { flex-shrink: 0; height: 59px; background: var(--bg-app); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 16px; z-index: 10; cursor: pointer;}
 .header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
-.back-btn { display: none; background: none; border: none; color: #54656f; font-size: 1.4rem; padding: 0; margin-right: -4px; cursor: pointer; }
+.back-btn { 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    background: none; 
+    border: none; 
+    color: #54656f; 
+    font-size: 1.5rem; 
+    width: 40px; 
+    height: 40px; 
+    border-radius: 50%; 
+    margin-right: 6px; 
+    cursor: pointer; 
+    transition: background .2s, color .2s; 
+    flex-shrink: 0;
+    z-index: 5;
+}
+.back-btn:hover, .back-btn:active {
+    background: rgba(0,0,0,0.08);
+    color: var(--text-main);
+}
 .header-avatar { width: 40px; height: 40px; border-radius: 50%; background: #dfe5e7; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; flex-shrink: 0; }
 .visitor-info-header { display: flex; flex-direction: column; min-width: 0; }
 .visitor-name { font-weight: 500; font-size: 1rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -247,9 +267,12 @@ html, body {
 /* ─── Media Queries ─── */
 @media (max-width: 767px) {
     .admin-conversations-list { width: 100%; max-width: none; border-right: none; }
-    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 50; width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); box-sizing: border-box; }
+    .admin-conversations-scroll { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 10000; width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); box-sizing: border-box; }
     .admin-chat-window.active { transform: translateX(0); }
-    .back-btn { display: block; }
+    .admin-chat-window.active ~ .admin-mobile-navbar,
+    body:has(.admin-chat-window.active) .admin-mobile-navbar { display: none !important; }
+    .back-btn { display: flex; }
     .header-avatar { width: 36px; height: 36px; }
     .visitor-name { font-size: 1rem; }
     .header-right button { width: 36px; height: 36px; }

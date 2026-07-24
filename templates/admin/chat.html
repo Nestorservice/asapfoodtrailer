@@ -56,8 +56,10 @@
                 
                 <div id="activeConvArea" style="display:none; height:100%; flex-direction:column;">
                     <div class="admin-chat-header">
+                        <button class="back-btn" onclick="event.stopPropagation(); AdminChat.closeConv(event)" title="Retour aux conversations">
+                            <i class="bi bi-arrow-left"></i>
+                        </button>
                         <div class="header-left" onclick="AdminChat.toggleVisitorInfo()">
-                            <button class="back-btn" onclick="AdminChat.closeConv(event)"><i class="bi bi-arrow-left"></i></button>
                             <div class="header-avatar" id="activeAvatar"></div>
                             <div class="visitor-info-header">
                                 <div class="visitor-name" id="activeName"></div>
@@ -154,7 +156,34 @@
         </div>
     </main>
 
+    <!-- Glassmorphic Mobile Bottom Navbar -->
+    <nav class="admin-mobile-navbar">
+        <a href="/admin/dashboard" class="mobile-nav-item">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Stats</span>
+        </a>
+        <a href="/admin/inventory" class="mobile-nav-item">
+            <i class="bi bi-truck"></i>
+            <span>Stock</span>
+        </a>
+        <a href="/admin/leads" class="mobile-nav-item">
+            <i class="bi bi-person-lines-fill"></i>
+            <span>Leads</span>
+        </a>
+        <a href="/admin/chat" class="mobile-nav-item active">
+            <div class="mobile-nav-icon-wrap">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span class="mobile-nav-badge" id="mobileNavChatBadge" style="display:none;">0</span>
+            </div>
+            <span>Chat</span>
+        </a>
+        <a href="/admin/settings" class="mobile-nav-item">
+            <i class="bi bi-gear-fill"></i>
+            <span>Réglages</span>
+        </a>
+    </nav>
 
+    <script src="/assets/js/admin-global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/stream-chat@8.14.0/dist/browser.full-bundle.min.js"></script>
     <script src="/assets/js/admin-chat.js"></script>
 </body>

@@ -77,6 +77,10 @@ const AdminChat = (function() {
             document.title = 'Chat — ASAP Admin';
         }
 
+        if (window.AdminGlobal) {
+            window.AdminGlobal.updateBadge(unreadTotal);
+        }
+
         if(!filtered.length) {
             $('convList').innerHTML = '<div class="chat-empty-state" style="padding:40px;"><i class="bi bi-inbox" style="font-size:3rem; margin-bottom:10px;"></i><p style="font-size:0.9rem">Aucune conversation</p></div>';
             return;
@@ -327,8 +331,13 @@ const AdminChat = (function() {
                     if(activeChannel && event.cid === activeChannel.cid) {
                         renderMsgs();
                         try { activeChannel.markRead(); } catch(e){}
-                    } else {
-                        if(notifSound && event.user.id !== 'asap-admin') notifSound.play();
+                    }
+                    if (event.user.id !== 'asap-admin') {
+                        if (window.AdminGlobal) {
+                            window.AdminGlobal.playSound();
+                        } else if (notifSound) {
+                            notifSound.play().catch(() => {});
+                        }
                     }
                 });
                 
@@ -355,6 +364,12 @@ const AdminChat = (function() {
                 
                 $('convSearch').addEventListener('input', () => renderList());
                 
+                window.addEventListener('popstate', function() {
+                    if($('chatWindow') && $('chatWindow').classList.contains('active')) {
+                        AdminChat.closeConv(null, false);
+                    }
+                });
+
             } catch(e) { console.error('Init fail', e); }
         },
         
@@ -385,13 +400,14 @@ const AdminChat = (function() {
             renderMsgs();
             populateVisitorInfo();
             
-            try { await activeChannel.markRead(); } catch(e){}
+            try { await activeChannel.markRead(); renderList(); } catch(e){}
             
             if(window.matchMedia("(max-width: 767px)").matches) {
                 $('chatWindow').classList.add('active');
+                try { history.pushState({ chatActive: true }, ''); } catch(e) {}
             }
         },
-        closeConv: function(e) {
+        closeConv: function(e, updateHistory = true) {
             if(e) { e.preventDefault(); e.stopPropagation(); }
             $('chatWindow').classList.remove('active');
             setTimeout(() => {
