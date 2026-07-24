@@ -385,7 +385,82 @@ h6 {
     text-decoration: none;
 }
 
-/* ─── HEADER TOPBAR CONTRAST & VISIBILITY FIX ─── */
+/* ─── MOBILE & DESKTOP HEADER TOPBAR ─── */
+.header-top-area {
+    background: #0d0d0d !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 0;
+    z-index: 10;
+}
+
+.topbar-contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffffff !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 20px;
+    background: rgba(255, 107, 0, 0.18);
+    border: 1px solid rgba(255, 107, 0, 0.4);
+    transition: all 0.2s ease;
+}
+
+.topbar-contact-btn i {
+    color: #ff6b00 !important;
+    font-size: 0.85rem;
+}
+
+.topbar-contact-btn:hover {
+    background: #ff6b00 !important;
+    color: #ffffff !important;
+}
+.topbar-contact-btn:hover i {
+    color: #ffffff !important;
+}
+
+/* Mobile Quick Call Button in Main Header */
+.mobile-header-call {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #ff6b00, #ff8c33);
+    color: #fff !important;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 20px;
+    text-decoration: none;
+    box-shadow: 0 2px 8px rgba(255, 107, 0, 0.35);
+    transition: transform 0.2s ease;
+}
+
+.mobile-header-call:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 991px) {
+    .header1-bg {
+        background: #0a0a0a !important;
+        border-radius: 0 !important;
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+    .vl-header-area1 {
+        background: #0a0a0a !important;
+    }
+    .header1-bg .header-top-area::after {
+        display: none !important;
+    }
+    .header-top-social a {
+        width: 28px;
+        height: 28px;
+        font-size: 0.85rem;
+    }
+}
+
 .header1-bg .header-top-area::after {
     background-color: #111111 !important; /* Rich Dark Background for Header Topbar */
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);

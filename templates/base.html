@@ -57,21 +57,28 @@
     <header>
         <div id="vl-header-sticky" class="vl-header-area1 header-tranperent">
             <div class="container header1-bg">
-                <div class="header-top-area d-none d-lg-block">
+                <!-- Mobile & Desktop Prominent Top Bar -->
+                <div class="header-top-area">
                     <div class="row align-items-center">
-                        <div class="col-lg-3"></div>
-                        <div class="col-lg-6">
-                            <div class="header-top-info d-flex">
-                                <p><i class="bi bi-geo-alt" style="margin-right:4px;"></i> {{ business.address }}</p>
-                                <p class="add-after"><i class="bi bi-clock" style="margin-right:4px;"></i> Mon-Sat
-                                    8AM - 6PM</p>
+                        <div class="col-lg-3 d-none d-lg-block"></div>
+                        <div class="col-lg-5 col-12 mb-1 mb-lg-0">
+                            <div class="header-top-info d-flex align-items-center justify-content-between justify-content-lg-start gap-2">
+                                <a href="tel:{{ business.phone }}" class="topbar-contact-btn phone-btn">
+                                    <i class="bi bi-telephone-fill"></i>
+                                    <span>{{ business.phone }}</span>
+                                </a>
+                                <a href="mailto:{{ business.email }}" class="topbar-contact-btn email-btn">
+                                    <i class="bi bi-envelope-fill"></i>
+                                    <span class="d-none d-sm-inline">{{ business.email }}</span>
+                                    <span class="d-inline d-sm-none">Email</span>
+                                </a>
+                                <span class="d-none d-xl-inline-block text-white-50 ms-2" style="font-size:0.8rem;"><i class="bi bi-geo-alt-fill text-warning me-1"></i>{{ business.address }}</span>
                             </div>
                         </div>
-                        <div class="col-lg-3">
-                            <div class="header-top-info text-end d-flex align-items-center justify-content-end gap-3">
-                                <p><i class="bi bi-envelope" style="margin-right:4px;"></i> <a
-                                        href="mailto:{{ business.email }}" style="color:inherit;">{{ business.email }}</a></p>
-                                <div class="header-top-social d-none d-xl-flex gap-2 ms-2">
+                        <div class="col-lg-4 col-12">
+                            <div class="header-top-info text-end d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
+                                <span class="d-none d-lg-inline-block text-white-50" style="font-size:0.8rem;"><i class="bi bi-clock-fill text-warning me-1"></i>Mon-Sat 8AM-6PM</span>
+                                <div class="header-top-social d-flex gap-2 align-items-center ms-auto ms-lg-0">
                                     <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="top-tiktok"><i class="bi bi-tiktok"></i></a>
                                     <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="top-fb"><i class="bi bi-facebook"></i></a>
                                     <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="top-ig"><i class="bi bi-instagram"></i></a>
@@ -81,13 +88,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="row align-items-center">
-                    <div class="col-lg-3 col-md-6 col-6">
+                <div class="row align-items-center py-2">
+                    <div class="col-lg-3 col-md-5 col-5">
                         <div class="vl-logo">
                             <a href="/" class="header1-logo d-none d-lg-block"><img src="/assets/img/logo/logo.jpg"
                                     alt="{{ business.name }}" style="height:50px;border-radius:8px;"></a>
                             <a href="/" class="header1-logo d-block d-lg-none"><img src="/assets/img/logo/logo.jpg"
-                                    alt="{{ business.name }}" style="height:40px;border-radius:8px;"></a>
+                                    alt="{{ business.name }}" style="height:42px;border-radius:8px;"></a>
                         </div>
                     </div>
                     <div class="col-lg-6 d-none d-lg-block text-start">
@@ -110,7 +117,7 @@
                             </nav>
                         </div>
                     </div>
-                    <div class="col-lg-3 col-md-6 col-6">
+                    <div class="col-lg-3 col-md-7 col-7">
                         <div class="vl-header1-btns text-end d-none d-lg-block">
                             <div class="buttons">
                                 <div class="header-contact-number">
@@ -121,8 +128,11 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="vl-header-action-item d-block d-lg-none">
-                            <button type="button" class="vl-offcanvas-toggle">
+                        <div class="vl-header-action-item d-flex align-items-center justify-content-end gap-2 d-lg-none">
+                            <a href="tel:{{ business.phone }}" class="mobile-header-call">
+                                <i class="bi bi-telephone-fill"></i> Appeler
+                            </a>
+                            <button type="button" class="vl-offcanvas-toggle" aria-label="Menu">
                                 <i class="bi bi-list"></i>
                             </button>
                         </div>
