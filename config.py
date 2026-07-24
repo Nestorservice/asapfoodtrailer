@@ -48,7 +48,7 @@ class Settings:
 
     # Social Media
     SOCIAL_TIKTOK = os.getenv(
-        "SOCIAL_TIKTOK", "https://www.tiktok.com/@food.truck.and.tr"
+        "SOCIAL_TIKTOK", "https://www.tiktok.com/@baiyeopwu9q?_r=1&_t=ZS-98Id027oVUe"
     )
     SOCIAL_FACEBOOK = os.getenv(
         "SOCIAL_FACEBOOK", "https://www.facebook.com/share/1AhBtVhbus/?mibextid=wwXIfr"

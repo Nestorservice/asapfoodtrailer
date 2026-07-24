@@ -407,6 +407,25 @@ h6 {
     transform: translateY(-3px);
 }
 
+.vl-copyright-social2 a.social-btn-tiktok:hover {
+    background: #000000 !important;
+    box-shadow: -2px 2px 0px #00f2fe, 2px -2px 0px #ff0050;
+    color: #fff !important;
+    transform: translateY(-3px);
+}
+
+.vl-copyright-social2 a.social-btn-fb:hover {
+    background: #1877f2 !important;
+    color: #fff !important;
+    transform: translateY(-3px);
+}
+
+.vl-copyright-social2 a.social-btn-ig:hover {
+    background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
+    color: #fff !important;
+    transform: translateY(-3px);
+}
+
 .vl-copyright-social2 a i {
     color: #fff !important;
 }
