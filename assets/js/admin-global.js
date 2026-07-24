@@ -34,7 +34,30 @@ window.AdminGlobal = (function() {
     document.addEventListener('click', unlockAudio, { once: true });
     document.addEventListener('touchstart', unlockAudio, { once: true });
 
+    let isMuted = false;
+
+    function toggleMute() {
+        isMuted = !isMuted;
+        return isMuted;
+    }
+
+    function showToast(msg, type = 'info') {
+        let toast = document.getElementById('asapToast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'asapToast';
+            toast.className = 'asap-toast';
+            document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        toast.className = 'asap-toast show' + (type === 'success' ? ' success' : type === 'error' ? ' error' : '');
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3500);
+    }
+
     function playSound() {
+        if (isMuted) return;
         if (notifSound) {
             notifSound.currentTime = 0;
             const p = notifSound.play();
@@ -47,6 +70,7 @@ window.AdminGlobal = (function() {
     }
 
     function playSynthesizedChime() {
+        if (isMuted) return;
         try {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (!AC) return;
@@ -114,7 +138,7 @@ window.AdminGlobal = (function() {
     // Automatic PWA Service Worker Registration & Live Auto-Update
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/assets/js/sw.js').then(function(reg) {
+            navigator.serviceWorker.register('/sw.js').then(function(reg) {
                 // Force check for updates from server on every visit
                 reg.update();
             }).catch(function(err) {
@@ -152,6 +176,8 @@ window.AdminGlobal = (function() {
     return {
         updateBadge: updateBadge,
         playSound: playSound,
-        playChime: playSynthesizedChime
+        playChime: playSynthesizedChime,
+        showToast: showToast,
+        toggleMute: toggleMute
     };
 })();

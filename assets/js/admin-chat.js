@@ -774,38 +774,30 @@ const AdminChat = (function() {
         },
         toggleGlobalNotifications: async function() {
             const btn = $('btnNotifGlobal');
+
+            // Quick toggle for audio mute/unmute if clicked
+            if (window.AdminGlobal && window.AdminGlobal.toggleMute) {
+                const isMuted = window.AdminGlobal.toggleMute();
+                if (btn) {
+                    btn.innerHTML = isMuted ? '<i class="bi bi-bell-slash-fill" style="color:#ff3b30;"></i>' : '<i class="bi bi-bell-fill" style="color:#25d366;"></i>';
+                }
+                if (window.AdminGlobal.showToast) {
+                    window.AdminGlobal.showToast(isMuted ? 'Notifications sonores coupées 🔕' : 'Notifications sonores activées 🔔', isMuted ? 'error' : 'success');
+                }
+            }
+
             if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-                alert('Notifications non supportées.\nSur iPhone : ouvrez dans Safari et installez via "Sur l\'écran d\'accueil".');
                 return;
             }
             if (Notification.permission === 'denied') {
-                alert('Notifications bloquées.\n\nPour les activer :\nRéglages → ASAP Admin → Notifications → Autoriser les notifications → ON');
                 return;
             }
-            if (btn) btn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
             try {
                 const p = await Notification.requestPermission();
-                if (p !== 'granted') {
-                    if (btn) btn.innerHTML = '<i class="bi bi-bell-slash-fill"></i>';
-                    alert('Permission refusée.\nVa dans Réglages → ASAP Admin → Notifications pour activer.');
-                    return;
-                }
-                const ok = await AdminChat.setupWebPush();
-                if (ok) {
-                    if (btn) { btn.innerHTML = '<i class="bi bi-bell-fill"></i>'; btn.style.color = '#4CAF50'; }
-                    // Send test so the user immediately sees if it works
-                    await fetch('/api/push/notify', {
-                        method: 'POST', headers: {'Content-Type':'application/json'},
-                        body: JSON.stringify({ title: '✅ ASAP Admin', body: 'Notifications activées ! Mets l\'appli en arrière-plan pour les voir.' })
-                    });
-                    setTimeout(() => { if (btn) btn.style.color = ''; }, 5000);
-                } else {
-                    if (btn) btn.innerHTML = '<i class="bi bi-bell-slash-fill"></i>';
-                    alert('Échec de l\'abonnement push.\nOuvre la console (F12) pour voir l\'erreur exacte.');
+                if (p === 'granted') {
+                    await AdminChat.setupWebPush();
                 }
             } catch(e) {
-                if (btn) btn.innerHTML = '<i class="bi bi-bell-fill"></i>';
-                alert('Erreur : ' + e.message);
                 console.error('[Notif setup]', e);
             }
         },
