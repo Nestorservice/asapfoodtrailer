@@ -132,6 +132,23 @@ window.AdminGlobal = (function() {
         });
     }
 
+    // Automatic Unread Badge Polling every 5 seconds
+    function pollUnread() {
+        fetch('/api/admin/unread_count')
+            .then(r => r.json())
+            .then(data => {
+                if (data && typeof data.unread === 'number') {
+                    updateBadge(data.unread);
+                }
+            })
+            .catch(() => {});
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        pollUnread();
+        setInterval(pollUnread, 5000);
+    });
+
     return {
         updateBadge: updateBadge,
         playSound: playSound,

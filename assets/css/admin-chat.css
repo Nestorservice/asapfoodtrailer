@@ -265,13 +265,12 @@ html, body {
 .vip-item p { font-size: 0.95rem; margin: 0; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
 
 /* ─── Media Queries ─── */
-@media (max-width: 767px) {
+@media (max-width: 991px) {
+    .admin-main { height: calc(100% - 64px - env(safe-area-inset-bottom, 0px)) !important; }
     .admin-conversations-list { width: 100%; max-width: none; border-right: none; }
-    .admin-conversations-scroll { padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
-    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 10000; width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); box-sizing: border-box; }
+    .admin-conversations-scroll { padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px)); }
+    .admin-chat-window { position: fixed; top: 0; left: 0; right: 0; bottom: 0; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.2, 0, 0.2, 1); z-index: 100000; width: 100%; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); box-sizing: border-box; background: var(--bg-app); }
     .admin-chat-window.active { transform: translateX(0); }
-    .admin-chat-window.active ~ .admin-mobile-navbar,
-    body:has(.admin-chat-window.active) .admin-mobile-navbar { display: none !important; }
     .back-btn { display: flex; }
     .header-avatar { width: 36px; height: 36px; }
     .visitor-name { font-size: 1rem; }
@@ -285,6 +284,7 @@ html, body {
     .msg-reactions { bottom: -14px; }
     .visitor-info-panel { width: 100%; }
     .qr-list-item .qr-delete { opacity: 1; }
+    .admin-mobile-navbar { display: flex !important; z-index: 99999 !important; }
 }
 @media (min-width: 1024px) {
     .admin-chat-container { border-radius: 0; height: 100vh; max-width: 100%; }

@@ -470,6 +470,15 @@ async def api_chat_admin_token():
     }
 
 
+@app.get("/api/admin/unread_count")
+async def api_admin_unread_count():
+    """Return total unread messages count for admin."""
+    if not chat_service.enabled:
+        return {"unread": 0}
+    unread = chat_service.get_total_unread_count()
+    return {"unread": unread}
+
+
 # ═══════════════════════════════════════════════════════════════
 #  PUSH NOTIFICATION ROUTES
 # ═══════════════════════════════════════════════════════════════

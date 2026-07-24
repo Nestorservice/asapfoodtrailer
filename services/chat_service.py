@@ -147,6 +147,27 @@ class ChatService:
             print(f"[Chat] Admin token generation failed: {e}")
             return ""
 
+    def get_total_unread_count(self) -> int:
+        """Get total unread messages count for admin across all channels."""
+        if not self.enabled:
+            return 0
+        try:
+            self.ensure_admin_user()
+            resp = self.client.query_channels(
+                filter_conditions={"type": "messaging", "members": {"$in": ["asap-admin"]}},
+                limit=50,
+            )
+            total = 0
+            for ch in resp.get("channels", []):
+                read_states = ch.get("read", [])
+                for r in read_states:
+                    if isinstance(r, dict) and r.get("user", {}).get("id") == "asap-admin":
+                        total += r.get("unread_messages", 0)
+            return total
+        except Exception as e:
+            print(f"[Chat] get_total_unread_count failed: {e}")
+            return 0
+
 
 # ─── Rate limiter (simple in-memory) ─────────────────────────
 _rate_limits: dict = {}  # { ip: [timestamp, ...] }
