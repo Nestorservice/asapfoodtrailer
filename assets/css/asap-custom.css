@@ -385,7 +385,44 @@ h6 {
     text-decoration: none;
 }
 
-/* ─── FOOTER SOCIAL ICONS ─── */
+/* ─── HEADER TOPBAR CONTRAST & VISIBILITY FIX ─── */
+.header1-bg .header-top-area::after {
+    background-color: #111111 !important; /* Rich Dark Background for Header Topbar */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header1-bg .header-top-info p,
+.header1-bg .header-top-info a {
+    color: #ffffff !important; /* High contrast crisp white text */
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.header1-bg .header-top-info p i,
+.header1-bg .header-top-info a i {
+    color: var(--asap-orange, #ff6b00) !important; /* Bright ASAP Orange icons */
+}
+
+.header-top-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff !important;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+    text-decoration: none;
+}
+
+.header-top-social a:hover {
+    transform: translateY(-2px) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* ─── FOOTER & TOPBAR SOCIAL ICONS ─── */
 .vl-copyright-social2 a {
     display: inline-flex;
     align-items: center;
@@ -407,23 +444,30 @@ h6 {
     transform: translateY(-3px);
 }
 
+.header-top-social a.top-tiktok:hover,
 .vl-copyright-social2 a.social-btn-tiktok:hover {
     background: #000000 !important;
     box-shadow: -2px 2px 0px #00f2fe, 2px -2px 0px #ff0050;
     color: #fff !important;
-    transform: translateY(-3px);
 }
 
+.header-top-social a.top-fb:hover,
 .vl-copyright-social2 a.social-btn-fb:hover {
     background: #1877f2 !important;
     color: #fff !important;
-    transform: translateY(-3px);
 }
 
+.header-top-social a.top-ig:hover,
 .vl-copyright-social2 a.social-btn-ig:hover {
     background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888) !important;
     color: #fff !important;
-    transform: translateY(-3px);
+}
+
+.header-top-social a.top-x:hover,
+.vl-copyright-social2 a.social-btn-x:hover {
+    background: #000000 !important;
+    color: #fff !important;
+    border: 1px solid #444;
 }
 
 .vl-copyright-social2 a i {

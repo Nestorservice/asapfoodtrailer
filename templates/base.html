@@ -70,12 +70,12 @@
                         <div class="col-lg-3">
                             <div class="header-top-info text-end d-flex align-items-center justify-content-end gap-3">
                                 <p><i class="bi bi-envelope" style="margin-right:4px;"></i> <a
-                                        href="mailto:{{ business.email }}" style="color:inherit;">{{ business.email
-                                        }}</a></p>
+                                        href="mailto:{{ business.email }}" style="color:inherit;">{{ business.email }}</a></p>
                                 <div class="header-top-social d-none d-xl-flex gap-2 ms-2">
-                                    <a href="{{ social.tiktok }}" target="_blank" title="TikTok" style="color:rgba(255,255,255,0.85);font-size:1.1rem;transition:transform 0.2s;" onmouseover="this.style.color='#00f2fe';this.style.transform='scale(1.15)'" onmouseout="this.style.color='rgba(255,255,255,0.85)';this.style.transform='scale(1)'"><i class="bi bi-tiktok"></i></a>
-                                    <a href="{{ social.facebook }}" target="_blank" title="Facebook" style="color:rgba(255,255,255,0.85);font-size:1.1rem;transition:transform 0.2s;" onmouseover="this.style.color='#1877f2';this.style.transform='scale(1.15)'" onmouseout="this.style.color='rgba(255,255,255,0.85)';this.style.transform='scale(1)'"><i class="bi bi-facebook"></i></a>
-                                    <a href="{{ social.instagram }}" target="_blank" title="Instagram" style="color:rgba(255,255,255,0.85);font-size:1.1rem;transition:transform 0.2s;" onmouseover="this.style.color='#e1306c';this.style.transform='scale(1.15)'" onmouseout="this.style.color='rgba(255,255,255,0.85)';this.style.transform='scale(1)'"><i class="bi bi-instagram"></i></a>
+                                    <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="top-tiktok"><i class="bi bi-tiktok"></i></a>
+                                    <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="top-fb"><i class="bi bi-facebook"></i></a>
+                                    <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="top-ig"><i class="bi bi-instagram"></i></a>
+                                    <a href="{{ social.x }}" target="_blank" title="X (Twitter)" class="top-x"><i class="bi bi-twitter-x"></i></a>
                                 </div>
                             </div>
                         </div>
@@ -178,9 +178,10 @@
             <div class="vl-offcanvas-social mt-24">
                 <h4>Follow Us</h4>
                 <div class="vl-copyright-social2 text-start">
-                    <a href="{{ social.facebook }}" target="_blank"><i class="bi bi-facebook"></i></a>
-                    <a href="{{ social.instagram }}" target="_blank"><i class="bi bi-instagram"></i></a>
-                    <a href="{{ social.tiktok }}" target="_blank"><i class="bi bi-tiktok"></i></a>
+                    <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="social-btn-tiktok"><i class="bi bi-tiktok"></i></a>
+                    <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="social-btn-fb"><i class="bi bi-facebook"></i></a>
+                    <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="social-btn-ig"><i class="bi bi-instagram"></i></a>
+                    <a href="{{ social.x }}" target="_blank" title="X (Twitter)" class="social-btn-x"><i class="bi bi-twitter-x"></i></a>
                 </div>
             </div>
         </div>
@@ -207,9 +208,10 @@
                                 trailers. Whether you're starting a new mobile food business or expanding your fleet, we
                                 deliver quality you can count on.</p>
                             <div class="vl-copyright-social2 mt-24">
-                                <a href="{{ social.tiktok }}" target="_blank" title="Suivez-nous sur TikTok" class="social-btn-tiktok"><i class="bi bi-tiktok"></i></a>
+                                <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="social-btn-tiktok"><i class="bi bi-tiktok"></i></a>
                                 <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="social-btn-fb"><i class="bi bi-facebook"></i></a>
                                 <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="social-btn-ig"><i class="bi bi-instagram"></i></a>
+                                <a href="{{ social.x }}" target="_blank" title="X (Twitter)" class="social-btn-x"><i class="bi bi-twitter-x"></i></a>
                             </div>
                         </div>
                     </div>

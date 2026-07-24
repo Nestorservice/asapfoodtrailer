@@ -51,11 +51,14 @@ class Settings:
         "SOCIAL_TIKTOK", "https://www.tiktok.com/@baiyeopwu9q?_r=1&_t=ZS-98Id027oVUe"
     )
     SOCIAL_FACEBOOK = os.getenv(
-        "SOCIAL_FACEBOOK", "https://www.facebook.com/share/1AhBtVhbus/?mibextid=wwXIfr"
+        "SOCIAL_FACEBOOK", "https://www.facebook.com/share/14kEVy1Qsun/?mibextid=wwXIfr"
     )
     SOCIAL_INSTAGRAM = os.getenv(
         "SOCIAL_INSTAGRAM",
         "https://www.instagram.com/asap_trailers?igsh=MTB5ZjNiajFqNGtm&utm_source=qr",
+    )
+    SOCIAL_X = os.getenv(
+        "SOCIAL_X", "https://x.com/asapfoodtrucks?s=11"
     )
 
     # Paths

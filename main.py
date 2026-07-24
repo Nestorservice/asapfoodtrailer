@@ -122,6 +122,7 @@ def get_base_context(request: Request) -> dict:
             "tiktok": settings.SOCIAL_TIKTOK,
             "facebook": settings.SOCIAL_FACEBOOK,
             "instagram": settings.SOCIAL_INSTAGRAM,
+            "x": settings.SOCIAL_X,
         },
         "app_mode": settings.APP_MODE,
     }
