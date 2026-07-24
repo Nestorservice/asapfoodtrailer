@@ -59,31 +59,28 @@
             <div class="container header1-bg">
                 <!-- Mobile & Desktop Prominent Top Bar -->
                 <div class="header-top-area">
-                    <div class="row align-items-center">
-                        <div class="col-lg-3 d-none d-lg-block"></div>
-                        <div class="col-lg-5 col-12 mb-1 mb-lg-0">
-                            <div class="header-top-info d-flex align-items-center justify-content-between justify-content-lg-start gap-2">
-                                <a href="tel:{{ business.phone }}" class="topbar-contact-btn phone-btn">
-                                    <i class="bi bi-telephone-fill"></i>
-                                    <span>{{ business.phone }}</span>
-                                </a>
-                                <a href="mailto:{{ business.email }}" class="topbar-contact-btn email-btn">
-                                    <i class="bi bi-envelope-fill"></i>
-                                    <span class="d-none d-sm-inline">{{ business.email }}</span>
-                                    <span class="d-inline d-sm-none">Email</span>
-                                </a>
-                                <span class="d-none d-xl-inline-block text-white-50 ms-2" style="font-size:0.8rem;"><i class="bi bi-geo-alt-fill text-warning me-1"></i>{{ business.address }}</span>
-                            </div>
+                    <div class="topbar-flex-wrapper d-flex align-items-center justify-content-between">
+                        <!-- Left: Phone & Email Contact Pills -->
+                        <div class="topbar-contact-group d-flex align-items-center gap-2">
+                            <a href="tel:{{ business.phone }}" class="topbar-contact-btn phone-btn">
+                                <i class="bi bi-telephone-fill"></i>
+                                <span>{{ business.phone }}</span>
+                            </a>
+                            <a href="mailto:{{ business.email }}" class="topbar-contact-btn email-btn d-none d-sm-inline-flex">
+                                <i class="bi bi-envelope-fill"></i>
+                                <span>Email</span>
+                            </a>
+                            <span class="d-none d-xl-inline-block text-white-50 ms-2" style="font-size:0.8rem;"><i class="bi bi-geo-alt-fill text-warning me-1"></i>{{ business.address }}</span>
                         </div>
-                        <div class="col-lg-4 col-12">
-                            <div class="header-top-info text-end d-flex align-items-center justify-content-between justify-content-lg-end gap-3">
-                                <span class="d-none d-lg-inline-block text-white-50" style="font-size:0.8rem;"><i class="bi bi-clock-fill text-warning me-1"></i>Mon-Sat 8AM-6PM</span>
-                                <div class="header-top-social d-flex gap-2 align-items-center ms-auto ms-lg-0">
-                                    <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="top-tiktok"><i class="bi bi-tiktok"></i></a>
-                                    <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="top-fb"><i class="bi bi-facebook"></i></a>
-                                    <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="top-ig"><i class="bi bi-instagram"></i></a>
-                                    <a href="{{ social.x }}" target="_blank" title="X (Twitter)" class="top-x"><i class="bi bi-twitter-x"></i></a>
-                                </div>
+
+                        <!-- Right: Social Media Icons & Hours -->
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="d-none d-lg-inline-block text-white-50" style="font-size:0.8rem;"><i class="bi bi-clock-fill text-warning me-1"></i>Mon-Sat 8AM-6PM</span>
+                            <div class="header-top-social d-flex align-items-center gap-2">
+                                <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="top-tiktok"><i class="bi bi-tiktok"></i></a>
+                                <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="top-fb"><i class="bi bi-facebook"></i></a>
+                                <a href="{{ social.instagram }}" target="_blank" title="Instagram" class="top-ig"><i class="bi bi-instagram"></i></a>
+                                <a href="{{ social.x }}" target="_blank" title="X (Twitter)" class="top-x"><i class="bi bi-twitter-x"></i></a>
                             </div>
                         </div>
                     </div>

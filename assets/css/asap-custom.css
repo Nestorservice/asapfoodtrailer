@@ -385,32 +385,52 @@ h6 {
     text-decoration: none;
 }
 
-/* ─── MOBILE & DESKTOP HEADER TOPBAR ─── */
+/* ─── PERFECTLY ALIGNED MOBILE & DESKTOP HEADER TOPBAR ─── */
 .header-top-area {
     background: #0d0d0d !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 6px 0;
+    padding: 6px 12px !important;
     z-index: 10;
+}
+
+.topbar-flex-wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.topbar-contact-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .topbar-contact-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     color: #ffffff !important;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     text-decoration: none;
-    padding: 4px 12px;
+    padding: 0 12px;
+    height: 30px;
     border-radius: 20px;
     background: rgba(255, 107, 0, 0.18);
     border: 1px solid rgba(255, 107, 0, 0.4);
+    white-space: nowrap;
+    line-height: 1;
     transition: all 0.2s ease;
 }
 
 .topbar-contact-btn i {
     color: #ff6b00 !important;
     font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
 }
 
 .topbar-contact-btn:hover {
@@ -425,14 +445,18 @@ h6 {
 .mobile-header-call {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     background: linear-gradient(135deg, #ff6b00, #ff8c33);
     color: #fff !important;
     font-size: 0.82rem;
     font-weight: 700;
-    padding: 6px 14px;
-    border-radius: 20px;
+    padding: 0 14px;
+    height: 36px;
+    border-radius: 18px;
     text-decoration: none;
+    line-height: 1;
+    white-space: nowrap;
     box-shadow: 0 2px 8px rgba(255, 107, 0, 0.35);
     transition: transform 0.2s ease;
 }
@@ -441,12 +465,23 @@ h6 {
     transform: scale(0.96);
 }
 
+.vl-header-action-item .vl-offcanvas-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    padding: 0;
+    margin: 0;
+}
+
 @media (max-width: 991px) {
     .header1-bg {
         background: #0a0a0a !important;
         border-radius: 0 !important;
-        padding-left: 12px !important;
-        padding-right: 12px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
     }
     .vl-header-area1 {
         background: #0a0a0a !important;
@@ -455,8 +490,8 @@ h6 {
         display: none !important;
     }
     .header-top-social a {
-        width: 28px;
-        height: 28px;
+        width: 30px;
+        height: 30px;
         font-size: 0.85rem;
     }
 }
