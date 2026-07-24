@@ -53,9 +53,35 @@ const AdminChat = (function() {
         }).join('');
     }
 
+    function getLatestTime(ch) {
+        if (ch.state && ch.state.last_message_at) {
+            const t = new Date(ch.state.last_message_at).getTime();
+            if (!isNaN(t) && t > 0) return t;
+        }
+        if (ch.state && ch.state.messages && ch.state.messages.length > 0) {
+            const lastMsg = ch.state.messages[ch.state.messages.length - 1];
+            if (lastMsg && lastMsg.created_at) {
+                const t = new Date(lastMsg.created_at).getTime();
+                if (!isNaN(t) && t > 0) return t;
+            }
+        }
+        if (ch.data && ch.data.last_message_at) {
+            const t = new Date(ch.data.last_message_at).getTime();
+            if (!isNaN(t) && t > 0) return t;
+        }
+        if (ch.data && ch.data.created_at) {
+            const t = new Date(ch.data.created_at).getTime();
+            if (!isNaN(t) && t > 0) return t;
+        }
+        return 0;
+    }
+
     function renderList() {
         const search = ($('convSearch').value||'').toLowerCase();
-        let filtered = channels;
+        
+        // Sort channels strictly by latest message timestamp descending (WhatsApp style: newest active conversation ALWAYS at top)
+        let filtered = [...channels].sort((a, b) => getLatestTime(b) - getLatestTime(a));
+
         if(search) filtered = filtered.filter(ch => {
             const n = (ch.data.visitor_name||'').toLowerCase(), e = (ch.data.visitor_email||'').toLowerCase();
             return n.includes(search) || e.includes(search);
@@ -88,9 +114,10 @@ const AdminChat = (function() {
 
         $('convList').innerHTML = filtered.map(ch => {
             const d = ch.data, name = d.visitor_name || 'Visiteur';
-            const lm = ch.state.messages.length ? ch.state.messages[ch.state.messages.length - 1] : null;
+            const msgs = ch.state.messages || [];
+            const lm = msgs.length ? msgs[msgs.length - 1] : null;
             const lt = lm ? (lm.text || (lm.attachments && lm.attachments.length ? (lm.attachments[0].type==='image'?'📷 Photo':lm.attachments[0].type==='audio'?'🎤 Message vocal':'📎 Fichier') : '')) : 'Nouvelle conversation';
-            const t = lm ? fmtTime(lm.created_at) : fmtTime(ch.data.created_at);
+            const t = lm ? fmtTime(lm.created_at) : (ch.state.last_message_at ? fmtTime(ch.state.last_message_at) : fmtTime(ch.data.created_at));
             const u = ch.countUnread();
             const isOnline = ch.state.watchers && Object.keys(ch.state.watchers).length > 1; 
             
