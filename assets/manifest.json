@@ -1,7 +1,7 @@
 {
-  "name": "ASAP Food Trailer Admin",
+  "name": "ASAP Food Trucks Admin",
   "short_name": "ASAP Admin",
-  "description": "Admin panel for ASAP Food Trailer",
+  "description": "Admin panel for ASAP Food Trucks",
   "start_url": "/admin/dashboard",
   "scope": "/",
   "display": "standalone",

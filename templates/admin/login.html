@@ -193,22 +193,27 @@
 
         <form id="loginForm">
             <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="email" placeholder="admin@asapfoodtrailer.com" required>
+                <label>Numéro de téléphone ou Email</label>
+                <input type="text" id="email" placeholder="Ex: +12016453364 ou admin@asapfoodtrailer.com" required>
             </div>
             <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="password" placeholder="Enter your password" required>
+                <label>Mot de passe</label>
+                <input type="password" id="password" placeholder="Entrez votre mot de passe" required>
             </div>
             <button type="submit" class="login-btn" id="loginBtn">
-                <span id="loginText">Sign In</span>
+                <span id="loginText">Se Connecter</span>
                 <span id="loginSpinner" style="display:none;"><i class="bi bi-arrow-repeat"></i>
-                    Authenticating...</span>
+                    Connexion en cours...</span>
             </button>
         </form>
 
-        <div class="login-divider">Secure admin access</div>
-        <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Website</a>
+        <div style="text-align:center; margin-top:16px; color:rgba(255,255,255,0.5); font-size:0.8rem;">
+            <span>Mots de passe par défaut : </span>
+            <strong style="color:#ff6b00;">teacher12</strong> (Enseignant) &middot; <strong style="color:#ff6b00;">parent123</strong> (Parent)
+        </div>
+
+        <div class="login-divider">Accès sécurisé Admin & Portail</div>
+        <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Retour au site web</a>
     </div>
 
     <script>
@@ -221,22 +226,22 @@
             document.getElementById('loginSpinner').style.display = 'inline';
             errDiv.style.display = 'none';
             try {
-                var email = document.getElementById('email').value;
+                var identifier = document.getElementById('email').value;
                 var password = document.getElementById('password').value;
                 var res = await fetch('/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email, password: password })
+                    body: JSON.stringify({ identifier: identifier, email: identifier, phone: identifier, password: password })
                 });
                 var data = await res.json();
                 if (data.success) {
-                    window.location.href = '/admin/dashboard';
+                    window.location.href = data.redirect || '/admin/dashboard';
                 } else {
-                    errDiv.textContent = data.detail || 'Invalid credentials';
+                    errDiv.textContent = data.detail || 'Identifiant ou mot de passe incorrect';
                     errDiv.style.display = 'block';
                 }
             } catch (err) {
-                errDiv.textContent = 'Connection error. Please try again.';
+                errDiv.textContent = 'Erreur de connexion. Veuillez réespérer.';
                 errDiv.style.display = 'block';
             }
             btn.disabled = false;

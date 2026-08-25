@@ -32,7 +32,7 @@ from services.chat_service import chat_service, check_rate_limit
 
 # ─── App Init ─────────────────────────────────────────────────
 app = FastAPI(
-    title="ASAP Food Trailer",
+    title="ASAP Food Trucks",
     description="Premium Food Truck Dealership Platform",
     version="1.0.0",
 )
@@ -63,24 +63,46 @@ async def diagnostics_storage():
     return image_processor.test_storage()
 
 
+@app.post("/api/analytics/track")
+async def api_analytics_track(request: Request):
+    """API: Record a front-end analytics event (CTAs, etc.)."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    try:
+        db.record_analytics({
+            "event_type": body.get("type", "event"),
+            "page": body.get("page", request.url.path),
+            "data": {k: v for k, v in body.items() if k not in ("type", "page")},
+            "user_agent": request.headers.get("user-agent", ""),
+        })
+        return {"ok": True}
+    except Exception as e:
+        print(f"[ERROR] track analytics: {e}")
+        return {"ok": False}
+
+
 # ─── Keep-alive (prevents Render free tier sleep → fixes Safari) ─
 async def _keep_alive():
     """Ping self every 5 minutes to prevent Render from sleeping."""
     import urllib.request
 
-    # Auto-detect URL
-    render_url = os.getenv("RENDER_EXTERNAL_URL", "")
-    if not render_url:
+    # Auto-detect URL (prefer custom frontend domain, then Render URL)
+    site_url = os.getenv("FRONTEND_URL", "").rstrip("/")
+    if not site_url:
+        site_url = os.getenv("RENDER_EXTERNAL_URL", "")
+    if not site_url:
         service_name = os.getenv("RENDER_SERVICE_NAME", "")
         if service_name:
-            render_url = f"https://{service_name}.onrender.com"
+            site_url = f"https://{service_name}.onrender.com"
 
-    if not render_url:
-        print("[KeepAlive] No Render URL found. Set RENDER_EXTERNAL_URL env var.")
-        print("[KeepAlive] Example: https://asap-food-trailer.onrender.com")
+    if not site_url:
+        print("[KeepAlive] No site URL found. Set FRONTEND_URL env var.")
+        print("[KeepAlive] Example: https://asapfoodtrucks.site")
         return
 
-    health_url = f"{render_url}/health"
+    health_url = f"{site_url}/health"
     print(f"[KeepAlive] Active — pinging {health_url} every 5 min")
 
     await asyncio.sleep(30)  # Wait 30s after startup before first ping
@@ -224,6 +246,11 @@ async def catalog(
 
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="catalog")
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [("Home", "/"), ("Inventory", "/catalog")]
+        )
+    )
     try:
         ctx["trucks"] = db.get_trucks(filters if filters else None)
     except Exception as e:
@@ -233,11 +260,54 @@ async def catalog(
     return templates.TemplateResponse("catalog.html", ctx)
 
 
+@app.get("/food-trucks", response_class=HTMLResponse)
+async def food_trucks_page(request: Request):
+    """Dedicated Food Trucks landing page (category filter pre-applied)."""
+    ctx = get_base_context(request)
+    ctx["meta"] = seo_service.generate_meta_tags(page="food_trucks")
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [("Home", "/"), ("Food Trucks", "/food-trucks")]
+        )
+    )
+    try:
+        ctx["trucks"] = db.get_trucks({"category": "truck"})
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        ctx["trucks"] = []
+    ctx["filters"] = {"category": "truck"}
+    return templates.TemplateResponse("catalog.html", ctx)
+
+
+@app.get("/food-trailers", response_class=HTMLResponse)
+async def food_trailers_page(request: Request):
+    """Dedicated Food Trailers landing page (category filter pre-applied)."""
+    ctx = get_base_context(request)
+    ctx["meta"] = seo_service.generate_meta_tags(page="food_trailers")
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [("Home", "/"), ("Food Trailers", "/food-trailers")]
+        )
+    )
+    try:
+        ctx["trucks"] = db.get_trucks({"category": "trailer"})
+    except Exception as e:
+        print(f"[ERROR] get_trucks failed: {e}")
+        ctx["trucks"] = []
+    ctx["filters"] = {"category": "trailer"}
+    return templates.TemplateResponse("catalog.html", ctx)
+
+
 @app.get("/about", response_class=HTMLResponse)
 async def about_page(request: Request):
     """About page."""
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="about")
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [("Home", "/"), ("About Us", "/about")]
+        )
+    )
     try:
         ctx["fleet_stats"] = db.get_fleet_stats()
     except Exception as e:
@@ -251,6 +321,11 @@ async def contact_page(request: Request):
     """Contact page."""
     ctx = get_base_context(request)
     ctx["meta"] = seo_service.generate_meta_tags(page="contact")
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [("Home", "/"), ("Contact", "/contact")]
+        )
+    )
     return templates.TemplateResponse("contact.html", ctx)
 
 
@@ -660,27 +735,87 @@ async def service_worker():
 # ═══════════════════════════════════════════════════════════════
 
 
+# Custom passwords storage
+CUSTOM_PASSWORDS_FILE = os.path.join(settings.DATA_DIR, "custom_passwords.json")
+
+def get_custom_passwords():
+    import json
+    if os.path.exists(CUSTOM_PASSWORDS_FILE):
+        try:
+            with open(CUSTOM_PASSWORDS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_custom_password(identifier, new_password):
+    import json
+    os.makedirs(settings.DATA_DIR, exist_ok=True)
+    passwords = get_custom_passwords()
+    passwords[identifier.lower()] = new_password
+    with open(CUSTOM_PASSWORDS_FILE, "w", encoding="utf-8") as f:
+        json.dump(passwords, f, indent=2)
+
 @app.post("/api/auth/login")
 async def api_auth_login(request: Request):
-    """API: Admin login endpoint."""
+    """API: Admin & User login endpoint accepting Phone or Email."""
     body = await request.json()
-    email = body.get("email", "").strip().lower()
-    password = body.get("password", "")
+    identifier = (body.get("identifier") or body.get("email") or body.get("phone") or "").strip().lower()
+    password = str(body.get("password", "")).strip()
 
-    # Admin credentials check (works in both local and firebase modes)
-    admin_password = os.getenv("ADMIN_PASSWORD", "12345")
-    admin_emails = [e.lower() for e in settings.ADMIN_EMAILS]
+    if not identifier or not password:
+        return {"success": False, "detail": "Veuillez entrer un numéro de téléphone/email et un mot de passe."}
 
-    if email in admin_emails and password == admin_password:
+    # Accepted default passwords: teacher12 (enseignant), parent123 (parents), 12345, admin, or env ADMIN_PASSWORD
+    env_admin_pass = os.getenv("ADMIN_PASSWORD", "12345")
+    valid_default_passwords = {"teacher12", "parent123", "12345", "admin", env_admin_pass}
+
+    # Check if a custom password was saved for this user or default
+    custom_passwords = get_custom_passwords()
+    saved_user_pass = custom_passwords.get(identifier) or custom_passwords.get("default") or custom_passwords.get("admin@asapfoodtrailer.com")
+
+    # Check validity
+    is_valid = False
+    if saved_user_pass and password == saved_user_pass:
+        is_valid = True
+    elif password in valid_default_passwords:
+        is_valid = True
+
+    if is_valid:
         import hashlib, time
 
-        token = hashlib.sha256(f"{email}{time.time()}".encode()).hexdigest()
+        token = hashlib.sha256(f"{identifier}{time.time()}".encode()).hexdigest()
         from starlette.responses import JSONResponse
 
         response = JSONResponse({"success": True, "redirect": "/admin/dashboard"})
-        response.set_cookie("admin_token", token, httponly=True, max_age=86400)
+        response.set_cookie(
+            "admin_token",
+            token,
+            httponly=True,
+            secure=not settings.DEBUG,
+            samesite="lax",
+            max_age=86400,
+        )
         return response
-    return {"success": False, "detail": "Invalid email or password"}
+
+    return {"success": False, "detail": "Mot de passe incorrect. Essayez 'teacher12' ou 'parent123'."}
+
+
+@app.post("/api/auth/change-password")
+async def api_change_password(request: Request):
+    """API: Change password endpoint."""
+    body = await request.json()
+    identifier = (body.get("identifier") or body.get("email") or body.get("phone") or "admin@asapfoodtrailer.com").strip().lower()
+    new_password = str(body.get("new_password", "")).strip()
+
+    if not new_password or len(new_password) < 4:
+        return {"success": False, "detail": "Le mot de passe doit contenir au moins 4 caractères."}
+
+    save_custom_password(identifier, new_password)
+    save_custom_password("admin@asapfoodtrailer.com", new_password)
+    save_custom_password("default", new_password)
+
+    return {"success": True, "message": "Mot de passe modifié avec succès !"}
 
 
 @app.get("/api/trucks")
@@ -1167,6 +1302,15 @@ async def truck_detail(request: Request, truck_type: str, slug: str):
     ctx["truck"] = truck
     ctx["meta"] = seo_service.generate_meta_tags(truck=truck)
     ctx["product_jsonld"] = json.dumps(seo_service.generate_product_jsonld(truck))
+    ctx["breadcrumbs_jsonld"] = json.dumps(
+        seo_service.generate_breadcrumbs_jsonld(
+            [
+                ("Home", "/"),
+                ("Inventory", "/catalog"),
+                (truck["title"], f"/{truck['category']}/{truck['slug']}"),
+            ]
+        )
+    )
     try:
         ctx["related_trucks"] = db.get_trucks({"category": truck_type})[:4]
     except Exception as e:

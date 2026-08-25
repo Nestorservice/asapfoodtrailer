@@ -1,6 +1,26 @@
 {% extends "base.html" %}
 
+{% block jsonld %}
+{% if breadcrumbs_jsonld %}
+<script type="application/ld+json">{{ breadcrumbs_jsonld | safe }}</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
+
+{% if filters.get('category') == 'truck' %}
+    {% set page_title = 'Food Trucks for Sale' %}
+    {% set page_sub = 'Our Food Truck Fleet' %}
+    {% set crumb_label = 'Food Trucks' %}
+{% elif filters.get('category') == 'trailer' %}
+    {% set page_title = 'Food Trailers for Sale' %}
+    {% set page_sub = 'Our Food Trailer Fleet' %}
+    {% set crumb_label = 'Food Trailers' %}
+{% else %}
+    {% set page_title = 'Food Trucks & Trailers for Sale' %}
+    {% set page_sub = 'Our Fleet' %}
+    {% set crumb_label = 'Inventory' %}
+{% endif %}
 
 <!-- Page Header -->
 <div class="inner-hero bg-cover"
@@ -9,12 +29,12 @@
         <div class="row">
             <div class="col-lg-8">
                 <div class="heading1">
-                    <span class="sub-title2" style="color:#ff6b00;">Our Fleet</span>
-                    <h1 style="color:#fff; font-family:'Outfit',sans-serif; font-weight:900;">Browse Inventory</h1>
+                    <span class="sub-title2" style="color:#ff6b00;">{{ page_sub }}</span>
+                    <h1 style="color:#fff; font-family:'Outfit',sans-serif; font-weight:900;">{{ page_title }}</h1>
                     <nav aria-label="breadcrumb" class="mt-16">
                         <ol class="breadcrumb" style="background:transparent;padding:0;">
                             <li class="breadcrumb-item"><a href="/" style="color:rgba(255,255,255,.7);">Home</a></li>
-                            <li class="breadcrumb-item active" style="color:#ff6b00;">Inventory</li>
+                            <li class="breadcrumb-item active" style="color:#ff6b00;">{{ crumb_label }}</li>
                         </ol>
                     </nav>
                 </div>
@@ -32,8 +52,8 @@
                     <h5 style="font-weight:700;margin-bottom:24px;"><i class="bi bi-funnel"></i> Filters</h5>
                     <form action="/catalog" method="get">
                         <div class="mb-4">
-                            <label class="form-label">Category</label>
-                            <select name="category" class="form-select">
+                            <label class="form-label" for="filterCategory">Category</label>
+                            <select name="category" id="filterCategory" class="form-select">
                                 <option value="">All Types</option>
                                 <option value="truck" {{ 'selected' if filters.get('category')=='truck' }}>Food Trucks
                                 </option>
@@ -42,8 +62,8 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Condition</label>
-                            <select name="condition" class="form-select">
+                            <label class="form-label" for="filterCondition">Condition</label>
+                            <select name="condition" id="filterCondition" class="form-select">
                                 <option value="">Any Condition</option>
                                 <option value="new" {{ 'selected' if filters.get('condition')=='new' }}>New</option>
                                 <option value="used" {{ 'selected' if filters.get('condition')=='used' }}>Used</option>
@@ -52,17 +72,17 @@
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Usage</label>
-                            <select name="usage" class="form-select">
+                            <label class="form-label" for="filterUsage">Usage</label>
+                            <select name="usage" id="filterUsage" class="form-select">
                                 <option value="">Buy or Rent</option>
                                 <option value="sale" {{ 'selected' if filters.get('usage')=='sale' }}>For Sale</option>
                                 <option value="rent" {{ 'selected' if filters.get('usage')=='rent' }}>For Rent</option>
                             </select>
                         </div>
                         <div class="mb-4">
-                            <label class="form-label">Search</label>
-                            <input type="text" name="search" class="form-control" placeholder="Keyword..."
-                                value="{{ filters.get('search', '') }}">
+                            <label class="form-label" for="filterSearch">Search</label>
+                            <input type="text" name="search" id="filterSearch" class="form-control"
+                                placeholder="Keyword..." value="{{ filters.get('search', '') }}">
                         </div>
                         <button type="submit" class="theme-btn1 w-100" style="text-align:center;"><span
                                 class="text">Apply Filters </span><span class="arrow-all"><span class="arrow1"><i

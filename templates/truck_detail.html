@@ -1,5 +1,14 @@
 {% extends "base.html" %}
 
+{% block jsonld %}
+{% if product_jsonld %}
+<script type="application/ld+json">{{ product_jsonld | safe }}</script>
+{% endif %}
+{% if breadcrumbs_jsonld %}
+<script type="application/ld+json">{{ breadcrumbs_jsonld | safe }}</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <!-- Page Header -->
@@ -252,7 +261,7 @@
 <div id="quoteModal"
     style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px;">
     <div style="background:#fff;border-radius:16px;max-width:500px;width:100%;padding:40px;position:relative;">
-        <button onclick="this.parentElement.parentElement.style.display='none'"
+        <button type="button" onclick="this.parentElement.parentElement.style.display='none'" aria-label="Close quote form"
             style="position:absolute;top:16px;right:16px;border:none;background:none;font-size:1.5rem;cursor:pointer;color:#777;"><i
                 class="bi bi-x-lg"></i></button>
         <h4 style="font-weight:800;margin-bottom:8px;">Request a Quote</h4>

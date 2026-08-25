@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 
 {% block head_extra %}
+<script type="application/ld+json">{{ business_jsonld | safe }}</script>
 <style>
     .hero2-area {
         position: relative;
@@ -48,7 +49,8 @@
         margin-bottom: 16px;
     }
 
-    .hero2-heading h1 {
+    .hero2-heading h1,
+    .hero2-heading h2 {
         color: #fff;
         font-family: 'Outfit', sans-serif;
         font-weight: 900;
@@ -111,14 +113,14 @@
         <div class="swiper-wrapper">
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck1.jpeg" alt="Custom Food Truck">
+                    <img src="/assets/img/hero/truck1.jpeg" alt="ASAP Food Trucks custom food truck" fetchpriority="high">
                 </div>
                 <div class="hero2-content">
                     <div class="container">
                         <div class="row align-items-center">
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
-                                    <span class="sub-title">Premium Food Trucks & Trailers</span>
+                                    <span class="sub-title">ASAP Food Trucks — Premium Food Trucks &amp; Food Trailers</span>
                                     <h1>Launch Your Mobile Food Business Today</h1>
                                     <p class="mt-16">Industry-leading selection of new, used, and custom-built food
                                         trucks and trailers. Built for entrepreneurs who demand quality.</p>
@@ -141,7 +143,7 @@
             </div>
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck2.jpeg" alt="Custom Food Trailer">
+                    <img src="/assets/img/hero/truck2.jpeg" alt="ASAP Food Trucks custom food trailer" loading="lazy">
                 </div>
                 <div class="hero2-content">
                     <div class="container">
@@ -149,7 +151,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Custom Built to Your Vision</span>
-                                    <h1>Your Dream Kitchen On Wheels</h1>
+                                    <h2>Your Dream Kitchen On Wheels</h2>
                                     <p class="mt-16">From concept to delivery, we build custom food trucks tailored
                                         exactly to your menu, workflow, and brand identity.</p>
                                     <div class="button mt-30">
@@ -166,7 +168,7 @@
             </div>
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck3.jpeg" alt="Mobile Kitchen">
+                    <img src="/assets/img/hero/truck3.jpeg" alt="ASAP Food Trucks mobile kitchen rental" loading="lazy">
                 </div>
                 <div class="hero2-content">
                     <div class="container">
@@ -174,7 +176,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Flexible Leasing Available</span>
-                                    <h1>Start Serving Without the Big Investment</h1>
+                                    <h2>Start Serving Without the Big Investment</h2>
                                     <p class="mt-16">Affordable rental and lease-to-own options so you can start your
                                         food business with minimal upfront cost.</p>
                                     <div class="button mt-30">
@@ -192,8 +194,8 @@
         </div>
     </div>
     <div class="hero2-slider-btns">
-        <button class="hero-prev"><i class="bi bi-chevron-left"></i></button>
-        <button class="hero-next"><i class="bi bi-chevron-right"></i></button>
+        <button class="hero-prev" aria-label="Previous slide"><i class="bi bi-chevron-left"></i></button>
+        <button class="hero-next" aria-label="Next slide"><i class="bi bi-chevron-right"></i></button>
     </div>
 </div>
 
@@ -326,14 +328,15 @@
         <div class="row">
             <div class="col-lg-6 m-auto">
                 <div class="heading1 text-center">
-                    <span class="sub-title2" data-aos="fade-left" data-aos-duration="800">Why ASAP Food Trailer</span>
+                    <span class="sub-title2" data-aos="fade-left" data-aos-duration="800">Why ASAP Food Trucks</span>
                     <h2 data-aos="fade-left" data-aos-duration="1000">How We Deliver Excellence</h2>
                 </div>
             </div>
         </div>
         <!-- Mobile/Tablet image (hidden on desktop) -->
         <div class="d-lg-none text-center mb-4 mt-3">
-            <img src="/assets/img/deliver.jpeg" alt="Food truck delivery"
+            <img src="/assets/img/deliver.jpeg" alt="Food truck delivery by ASAP Food Trucks" loading="lazy"
+                width="360" height="270"
                 style="border-radius:16px;width:100%;max-width:360px;aspect-ratio:4/3;object-fit:cover;">
         </div>
         <div class="row mt-30">
@@ -359,7 +362,8 @@
             <div class="col-lg-5 d-none d-lg-block">
                 <div class="delivery1-images mt-50 text-center">
                     <div class="main-image">
-                        <img src="/assets/img/deliver.jpeg" alt="Food truck delivery" style="border-radius:16px;">
+                        <img src="/assets/img/deliver.jpeg" alt="Food truck delivery by ASAP Food Trucks" loading="lazy"
+                            style="border-radius:16px;">
                     </div>
                 </div>
             </div>

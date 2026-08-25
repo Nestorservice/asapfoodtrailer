@@ -37,7 +37,7 @@ class Settings:
     PORT = int(os.getenv("PORT", "8000"))
 
     # Business Info
-    BUSINESS_NAME = os.getenv("BUSINESS_NAME", "ASAP Food Trailer")
+    BUSINESS_NAME = os.getenv("BUSINESS_NAME", "ASAP Food Trucks")
     BUSINESS_PHONE = os.getenv("BUSINESS_PHONE", "+12016453364")
     BUSINESS_EMAIL = os.getenv(
         "BUSINESS_EMAIL", "ffoodtruckandtrailerforsaleand@gmail.com"

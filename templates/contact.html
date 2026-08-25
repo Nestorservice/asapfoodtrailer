@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block jsonld %}
+{% if breadcrumbs_jsonld %}
+<script type="application/ld+json">{{ breadcrumbs_jsonld | safe }}</script>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 
 <!-- Page Header -->
@@ -87,7 +93,7 @@
                             <div>
                                 <h6 style="font-weight:700;margin-bottom:2px;color:#fff;">X (Twitter)</h6>
                                 <a href="{{ social.x }}" target="_blank"
-                                    style="color:#ff6b00;text-decoration:none;font-weight:600;">@asapfoodtrucks — Suivez-nous →</a>
+                                    style="color:#ff6b00;text-decoration:none;font-weight:600;">@asapfoodtrucks — Follow us →</a>
                             </div>
                         </div>
                     </div>
@@ -101,7 +107,7 @@
                             <div>
                                 <h6 style="font-weight:700;margin-bottom:2px;color:#fff;">TikTok</h6>
                                 <a href="{{ social.tiktok }}" target="_blank"
-                                    style="color:#ff6b00;text-decoration:none;font-weight:600;">@baiyeopwu9q — Suivez-nous →</a>
+                                    style="color:#ff6b00;text-decoration:none;font-weight:600;">@baiyeopwu9q — Follow us →</a>
                             </div>
                         </div>
                     </div>
@@ -133,23 +139,24 @@
                     <form id="contactForm">
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">Full Name <span style="color:#ff6b00;">*</span></label>
-                                <input type="text" name="customer_name" class="form-control" placeholder="John Doe"
-                                    required style="border-radius:8px;padding:12px;">
+                                <label class="form-label" for="contactName">Full Name <span style="color:#ff6b00;">*</span></label>
+                                <input type="text" name="customer_name" id="contactName" class="form-control"
+                                    placeholder="John Doe" required style="border-radius:8px;padding:12px;">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Email <span style="color:#ff6b00;">*</span></label>
-                                <input type="email" name="email" class="form-control" placeholder="john@example.com"
-                                    required style="border-radius:8px;padding:12px;">
+                                <label class="form-label" for="contactEmail">Email <span style="color:#ff6b00;">*</span></label>
+                                <input type="email" name="email" id="contactEmail" class="form-control"
+                                    placeholder="john@example.com" required style="border-radius:8px;padding:12px;">
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Phone Number</label>
-                                <input type="tel" name="phone" class="form-control" placeholder="(555) 123-4567"
+                                <label class="form-label" for="contactPhone">Phone Number</label>
+                                <input type="tel" name="phone" id="contactPhone" class="form-control"
+                                    placeholder="(555) 123-4567" style="border-radius:8px;padding:12px;">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="contactInterest">Interest</label>
+                                <select name="interest" id="contactInterest" class="form-select"
                                     style="border-radius:8px;padding:12px;">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Interest</label>
-                                <select name="interest" class="form-select" style="border-radius:8px;padding:12px;">
                                     <option value="general">General Inquiry</option>
                                     <option value="purchase">Purchase a Vehicle</option>
                                     <option value="rental">Rent a Vehicle</option>
@@ -158,12 +165,14 @@
                                 </select>
                             </div>
                             <div class="col-12">
-                                <label class="form-label">Message <span style="color:#ff6b00;">*</span></label>
-                                <textarea name="message" class="form-control" rows="5"
+                                <label class="form-label" for="contactMessage">Message <span style="color:#ff6b00;">*</span></label>
+                                <textarea name="message" id="contactMessage" class="form-control" rows="5"
                                     placeholder="Tell us about your project or ask any questions..." required
                                     style="border-radius:8px;padding:12px;"></textarea>
                             </div>
                             <div class="col-12">
+                                <div id="contactError" class="alert alert-danger"
+                                    style="display:none;border-radius:8px;font-size:.9rem;"></div>
                                 <button type="submit" class="theme-btn1" id="contactSubmit"
                                     style="width:100%;text-align:center;"><span class="text">Send Message </span><span
                                         class="arrow-all"><span class="arrow1"><i
@@ -211,7 +220,9 @@
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 var btn = document.getElementById('contactSubmit');
+                var errDiv = document.getElementById('contactError');
                 btn.disabled = true;
+                errDiv.style.display = 'none';
                 var fd = new FormData(form);
                 fetch('/api/leads', { method: 'POST', body: fd })
                     .then(function (r) { return r.json(); })
@@ -221,11 +232,13 @@
                             document.getElementById('contactSuccess').style.display = 'block';
                         } else {
                             btn.disabled = false;
-                            alert('Error: ' + (data.detail || 'Please try again.'));
+                            errDiv.textContent = data.detail || 'Please try again.';
+                            errDiv.style.display = 'block';
                         }
                     }).catch(function () {
                         btn.disabled = false;
-                        alert('An error occurred. Please try again.');
+                        errDiv.textContent = 'An error occurred. Please try again.';
+                        errDiv.style.display = 'block';
                     });
             });
         }
