@@ -31,7 +31,7 @@ self.addEventListener('push', event => {
                 title: payload.title || 'New Message — ASAP',
                 body: payload.body || 'You have a new message',
                 icon: payload.icon || '/assets/img/logo/logo.jpg',
-                badge: '/assets/img/logo/favicon.svg',
+                badge: '/assets/img/logo/favicon-32x32.png',
                 tag: payload.tag || 'asap-chat-' + Date.now(),
                 data: {
                     url: payload.url || '/admin/chat',
@@ -59,7 +59,7 @@ self.addEventListener('push', event => {
         self.registration.showNotification(data.title, {
             body: data.body,
             icon: data.icon,
-            badge: data.badge || '/assets/img/logo/favicon.svg',
+            badge: data.badge || '/assets/img/logo/favicon-32x32.png',
             tag: data.tag,
             data: data.data,
             vibrate: data.vibrate || [200, 100, 200],
