@@ -30,6 +30,41 @@ from services.image_processor import image_processor
 from services.email_service import email_service
 from services.chat_service import chat_service, check_rate_limit
 
+
+# ─── HEAD request support (Googlebot & crawlers) ───────────────
+# FastAPI/Starlette returns 405 for HEAD requests on GET routes.
+# Some crawlers and URL-inspection tools send HEAD, which can make
+# Google Search Console report public pages as "inaccessible".
+# This pure-ASGI middleware serves HEAD exactly like GET: same
+# status + headers, empty body (per the HTTP spec).
+class HeadRequestMiddleware:
+    """Rewrite HEAD requests to GET and strip the response body."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and scope["method"] == "HEAD":
+            head_scope = dict(scope)
+            head_scope["method"] = "GET"
+
+            completed = False
+
+            async def head_send(message):
+                nonlocal completed
+                if message["type"] == "http.response.start":
+                    await send(message)
+                elif message["type"] == "http.response.body" and not completed:
+                    completed = True
+                    await send(
+                        {"type": "http.response.body", "body": b"", "more_body": False}
+                    )
+
+            await self.app(head_scope, receive, head_send)
+            return
+        await self.app(scope, receive, send)
+
+
 # ─── App Init ─────────────────────────────────────────────────
 app = FastAPI(
     title="ASAP Food Trucks",
@@ -39,6 +74,7 @@ app = FastAPI(
 
 # Middleware
 app.add_middleware(GZipMiddleware, minimum_size=500)
+app.add_middleware(HeadRequestMiddleware)
 
 # Static files
 app.mount("/assets", StaticFiles(directory=settings.STATIC_DIR), name="assets")
