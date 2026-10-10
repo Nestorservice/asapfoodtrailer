@@ -1,0 +1,81 @@
+# ============================================================
+# ASAP Food Trucks — Cache, Compression & Sécurité (PageSpeed 10/10/2026)
+# Efficace sur tout hébergement Apache (cPanel, mutualisé...).
+# Sur Railway/Render/FastAPI : voir main.py (middleware Cache-Control).
+# ============================================================
+
+# ---------- 1. COMPRESSION Gzip + Brotli ----------
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript \
+        application/javascript application/json application/xml application/rss+xml \
+        image/svg+xml font/ttf font/otf application/font-woff application/font-woff2
+</IfModule>
+
+<IfModule mod_brotli.c>
+    AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/xml text/css \
+        text/javascript application/javascript application/json image/svg+xml \
+        application/font-woff application/font-woff2
+</IfModule>
+
+# Né jamais compresser les WebP/JPEG (déjà optimisés)
+SetEnvIfNoCase Request_URI \.(?:gif|jpe?g|png|webp|avif|mp4|ico)$ no-gzip dont-vary
+
+#---------- 2. CACHE LONG — Images & Polices : 1 an, immutable ----------
+<IfModule mod_expires.c>
+    ExpiresActive On
+
+    # Images — 1 an
+    ExpiresByType image/webp                "access plus 1 year"
+    ExpiresByType image/jpeg                "access plus 1 year"
+    ExpiresByType image/jpg                 "access plus 1 year"
+    ExpiresByType image/png                 "access plus 1 year"
+    ExpiresByType image/gif                 "access plus 1 year"
+    ExpiresByType image/svg+xml             "access plus 1 year"
+    ExpiresByType image/avif                "access plus 1 year"
+    ExpiresByType image/x-icon              "access plus 1 year"
+
+    # Polices — 1 an
+    ExpiresByType font/woff2                "access plus 1 year"
+    ExpiresByType font/woff                 "access plus 1 year"
+    ExpiresByType font/ttf                  "access plus 1 year"
+    ExpiresByType font/otf                  "access plus 1 year"
+    ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+
+    # CSS / JS — 1 mois
+    ExpiresByType text/css                  "access plus 1 month"
+    ExpiresByType application/javascript    "access plus 1 month"
+    ExpiresByType text/javascript           "access plus 1 month"
+
+    # HTML — court (contenu dynamique)
+    ExpiresByType text/html                 "access plus 0 seconds"
+</IfModule>
+
+# En-têtes Cache-Control complémentaires
+<IfModule mod_headers.c>
+    <FilesMatch "\.(webp|jpe?g|png|gif|svg|avif|ico|woff2?|ttf|otf|eot)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+    <FilesMatch "\.(css|js)$">
+        Header set Cache-Control "public, max-age=2592000"
+    </FilesMatch>
+    <FilesMatch "\.html$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+
+    # ---------- 3. EN-TÊTES DE SÉCURITÉ ----------
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+    Header always set Permissions-Policy "camera=(), microphone=(self), geolocation=(), payment=()"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always append Vary "Accept-Encoding"
+    Header unset Server
+    Header unset X-Powered-By
+</IfModule>
+
+# ---------- 4. Types MIME modernes (si le serveur ne les connaît pas) ----------
+<IfModule mod_mime.c>
+    AddType image/webp .webp
+    AddType image/avif .avif
+    AddType font/woff2 .woff2
+</IfModule>

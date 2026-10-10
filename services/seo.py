@@ -70,13 +70,18 @@ class SEOService:
         same_as = [u for u in same_as if u]
 
         return {
+            # LocalBusiness : requis PageSpeed/AIO — nom, adresse, téléphone,
+            # horaires et zone desservie (source : config.py)
             "@context": "https://schema.org",
-            "@type": "Organization",
+            "@type": ["Organization", "LocalBusiness", "Store"],
             "@id": f"{self.BASE_URL}/#organization",
             "name": "ASAP Food Trucks",
+            "image": f"{self.BASE_URL}/assets/img/logo/logo-100.webp",
+            "logo": f"{self.BASE_URL}/assets/img/logo/logo-100.webp",
             "url": f"{self.BASE_URL}/",
             "telephone": settings.BUSINESS_PHONE,
             "email": settings.BUSINESS_EMAIL,
+            "priceRange": "$$$",
             "description": (
                 "ASAP Food Trucks sells new, used and custom-built food trucks "
                 "and food trailers, with rental and financing options."
@@ -86,6 +91,27 @@ class SEOService:
                 "addressLocality": settings.BUSINESS_CITY,
                 "addressRegion": "TX",
                 "addressCountry": "US",
+            },
+            "areaServed": {
+                "@type": "AdministrativeArea",
+                "name": "United States (nationwide delivery)",
+            },
+            "openingHoursSpecification": [
+                {
+                    "@type": "OpeningHoursSpecification",
+                    "dayOfWeek": [
+                        "Monday", "Tuesday", "Wednesday",
+                        "Thursday", "Friday", "Saturday",
+                    ],
+                    "opens": "08:00",
+                    "closes": "18:00",
+                }
+            ],
+            "contactPoint": {
+                "@type": "ContactPoint",
+                "telephone": settings.BUSINESS_PHONE,
+                "contactType": "sales",
+                "availableLanguage": ["English", "Spanish"],
             },
             "sameAs": same_as,
         }

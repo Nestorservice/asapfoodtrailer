@@ -1,5 +1,11 @@
 {% extends "base.html" %}
 
+{% block head_preload %}
+<!-- LCP : préchargement de l'image héro (WebP en priorité, fallback JPEG) -->
+<link rel="preload" as="image" href="/assets/img/hero/truck1.webp" type="image/webp">
+<link rel="preload" as="image" href="/assets/img/hero/truck1.jpeg" fetchpriority="high">
+{% endblock %}
+
 {% block head_extra %}
 <script type="application/ld+json">{{ business_jsonld | safe }}</script>
 <style>
@@ -50,7 +56,8 @@
     }
 
     .hero2-heading h1,
-    .hero2-heading h2 {
+    .hero2-heading h2,
+    .hero2-heading h3 {
         color: #fff;
         font-family: 'Outfit', sans-serif;
         font-weight: 900;
@@ -113,7 +120,12 @@
         <div class="swiper-wrapper">
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck1.jpeg" alt="ASAP Food Trucks custom food truck" fetchpriority="high">
+                    <picture>
+                        <source type="image/webp" srcset="/assets/img/hero/truck1.webp">
+                        <img src="/assets/img/hero/truck1.jpeg" alt="ASAP Food Trucks — food truck personnalisé en service"
+                            width="960" height="720" loading="eager" fetchpriority="high" decoding="async"
+                            style="width:100%;height:100%;object-fit:cover;">
+                    </picture>
                 </div>
                 <div class="hero2-content">
                     <div class="container">
@@ -143,7 +155,12 @@
             </div>
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck2.jpeg" alt="ASAP Food Trucks custom food trailer" loading="lazy">
+                    <picture>
+                        <source type="image/webp" srcset="/assets/img/hero/truck2.webp">
+                        <img src="/assets/img/hero/truck2.jpeg" alt="ASAP Food Trucks — remorque alimentaire sur mesure"
+                            width="720" height="720" loading="lazy" decoding="async"
+                            style="width:100%;height:100%;object-fit:cover;">
+                    </picture>
                 </div>
                 <div class="hero2-content">
                     <div class="container">
@@ -151,7 +168,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Custom Built to Your Vision</span>
-                                    <h2>Your Dream Kitchen On Wheels</h2>
+                                    <h3 class="hero-slide-heading">Your Dream Kitchen On Wheels</h3>
                                     <p class="mt-16">From concept to delivery, we build custom food trucks tailored
                                         exactly to your menu, workflow, and brand identity.</p>
                                     <div class="button mt-30">
@@ -168,7 +185,12 @@
             </div>
             <div class="swiper-slide">
                 <div class="main-bg-image">
-                    <img src="/assets/img/hero/truck3.jpeg" alt="ASAP Food Trucks mobile kitchen rental" loading="lazy">
+                    <picture>
+                        <source type="image/webp" srcset="/assets/img/hero/truck3.webp">
+                        <img src="/assets/img/hero/truck3.jpeg" alt="ASAP Food Trucks — cuisine mobile à louer"
+                            width="1080" height="1080" loading="lazy" decoding="async"
+                            style="width:100%;height:100%;object-fit:cover;">
+                    </picture>
                 </div>
                 <div class="hero2-content">
                     <div class="container">
@@ -176,7 +198,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Flexible Leasing Available</span>
-                                    <h2>Start Serving Without the Big Investment</h2>
+                                    <h3 class="hero-slide-heading">Start Serving Without the Big Investment</h3>
                                     <p class="mt-16">Affordable rental and lease-to-own options so you can start your
                                         food business with minimal upfront cost.</p>
                                     <div class="button mt-30">
@@ -270,10 +292,13 @@
                 <div class="asap-truck-card mt-30" data-aos="fade-up" data-aos-duration="{{ 800 + loop.index0 * 200 }}">
                     <div class="truck-card-image">
                         {% if truck.images and truck.images|length > 0 %}
-                        <img src="{{ truck.images[0] }}" alt="{{ truck.title }}" loading="lazy">
+                        <img src="{{ truck.images[0] }}{% if 'res.cloudinary.com' in truck.images[0] %}{% if '?' in truck.images[0] %}&{% else %}?{% endif %}f_webp,q_auto,w_600{% endif %}"
+                            alt="{{ truck.title }} — {{ truck.category | replace('-',' ') }} {% if truck.condition == 'new' %}neuf{% elif truck.condition == 'used' %}occasion{% else %}sur mesure{% endif %} ASAP Food Trucks"
+                            width="600" height="450" loading="lazy" decoding="async">
                         {% else %}
-                        <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=75"
-                            alt="{{ truck.title }}" loading="lazy">
+                        <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=60&fm=webp"
+                            alt="{{ truck.title }} — photo d'illustration food truck"
+                            width="600" height="450" loading="lazy" decoding="async">
                         {% endif %}
                         <div class="truck-card-badges">
                             {% if truck.condition == 'new' %}
@@ -281,7 +306,7 @@
                             {% elif truck.condition == 'used' %}
                             <span class="badge bg-warning text-dark">Used</span>
                             {% else %}
-                            <span class="badge" style="background:#ff6b00;">Custom</span>
+                            <span class="badge" style="background:#ff6b00;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);">Custom</span>
                             {% endif %}
                             {% if truck.featured %}
                             <span class="badge bg-danger">Featured</span>
@@ -329,29 +354,32 @@
             <div class="col-lg-6 m-auto">
                 <div class="heading1 text-center">
                     <span class="sub-title2" data-aos="fade-left" data-aos-duration="800">Why ASAP Food Trucks</span>
-                    <h2 data-aos="fade-left" data-aos-duration="1000">How We Deliver Excellence</h2>
+                    <h2 id="how-we-deliver" data-aos="fade-left" data-aos-duration="1000">How We Deliver Excellence</h2>
                 </div>
             </div>
         </div>
         <!-- Mobile/Tablet image (hidden on desktop) -->
         <div class="d-lg-none text-center mb-4 mt-3">
-            <img src="/assets/img/deliver.jpeg" alt="Food truck delivery by ASAP Food Trucks" loading="lazy"
+            <picture>
+            <source type="image/webp" srcset="/assets/img/deliver.webp">
+            <img src="/assets/img/deliver.jpeg" alt="Livraison de food truck par ASAP Food Trucks" loading="lazy" decoding="async"
                 width="360" height="270"
                 style="border-radius:16px;width:100%;max-width:360px;aspect-ratio:4/3;object-fit:cover;">
+            </picture>
         </div>
         <div class="row mt-30">
             <div class="col-lg mt-30">
                 <div class="delivery1-item-box">
                     <div class="number text-end mr-30"><span>01</span></div>
                     <div class="box" data-aos="flip-right" data-aos-duration="800">
-                        <h4><a href="/catalog">Browse & Select</a></h4>
+                        <h3><a href="/catalog">Browse & Select</a></h3>
                         <p class="mt-10">Explore our curated inventory of premium food trucks, trailers, and custom
                             builds.</p>
                     </div>
                 </div>
                 <div class="delivery1-item-box mt-40">
                     <div class="box" data-aos="flip-right" data-aos-duration="800">
-                        <h4><a href="/contact">Customize & Configure</a></h4>
+                        <h3><a href="/contact">Customize & Configure</a></h3>
                         <p class="mt-10">Work with our experts to tailor every detail to your menu, brand, and workflow.
                         </p>
                     </div>
@@ -362,8 +390,12 @@
             <div class="col-lg-5 d-none d-lg-block">
                 <div class="delivery1-images mt-50 text-center">
                     <div class="main-image">
-                        <img src="/assets/img/deliver.jpeg" alt="Food truck delivery by ASAP Food Trucks" loading="lazy"
-                            style="border-radius:16px;">
+                        <picture>
+                        <source type="image/webp" srcset="/assets/img/deliver.webp">
+                        <img src="/assets/img/deliver.jpeg" alt="Livraison de food truck par ASAP Food Trucks" loading="lazy" decoding="async"
+                            width="720" height="960"
+                            style="border-radius:16px;max-width:100%;height:auto;">
+                    </picture>
                     </div>
                 </div>
             </div>
@@ -371,13 +403,13 @@
                 <div class="delivery1-item-box">
                     <div class="number ml-30"><span>03</span></div>
                     <div class="box" data-aos="flip-right" data-aos-duration="800">
-                        <h4><a href="/contact">Financing & Delivery</a></h4>
+                        <h3><a href="/contact">Financing & Delivery</a></h3>
                         <p class="mt-10">Flexible financing options and nationwide delivery to get you serving fast.</p>
                     </div>
                 </div>
                 <div class="delivery1-item-box mt-40">
                     <div class="box" data-aos="flip-right" data-aos-duration="800">
-                        <h4><a href="/contact">Launch & Support</a></h4>
+                        <h3><a href="/contact">Launch & Support</a></h3>
                         <p class="mt-10">Ongoing maintenance, warranty, and 24/7 support to keep you running.</p>
                     </div>
                     <div class="number ml-30"><span>04</span></div>
@@ -411,13 +443,14 @@
                         <i class="bi bi-file-earmark-text" style="font-size:1.2rem;"></i> Get a Free Quote
                     </a>
                     <a href="https://wa.me/{{ business.whatsapp }}?text={{ 'Hi! I\'m interested in your food trucks. Can you send me more information?' | urlencode }}"
-                        target="_blank"
+                        target="_blank" rel="noopener"
+                        aria-label="Discuter sur WhatsApp"
                         style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:#25d366;color:#fff;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;box-shadow:0 4px 12px rgba(0,0,0,0.2);width:100%;max-width:280px;"
                         data-aos="fade-left" data-aos-duration="1000">
                         <i class="bi bi-whatsapp" style="font-size:1.3rem;"></i> Chat on WhatsApp
                     </a>
                     <a href="tel:{{ business.phone }}"
-                        style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.4);border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;width:100%;max-width:280px;"
+                        style="display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 28px;background:#ffffff;color:#0a0a0a;border:2px solid #ffffff;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .3s;width:100%;max-width:280px;"
                         data-aos="fade-left" data-aos-duration="1200">
                         <i class="bi bi-telephone"></i> {{ business.phone }}
                     </a>
@@ -449,7 +482,8 @@
             {% for t in image_testimonials %}
             <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up" data-aos-duration="{{ 600 + loop.index0 * 150 }}">
                 <div class="testimonial-img-card" onclick="openTestimonialLightbox('{{ t.image_url }}')">
-                    <img src="{{ t.image_url }}" alt="Client Testimonial" loading="lazy"
+                    <img src="{{ t.image_url }}" alt="Témoignage client ASAP Food Trucks" loading="lazy" decoding="async"
+                        width="300" height="200" style="width:100%;height:200px;object-fit:cover;"
                         onerror="this.parentElement.style.display='none'">
                     <div class="testimonial-img-overlay">
                         <i class="bi bi-zoom-in"></i>
