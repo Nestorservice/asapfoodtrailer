@@ -111,10 +111,22 @@
                             data-aos-duration="{{ 600 + loop.index0 * 100 }}">
                             <div class="truck-card-image">
                                 {% if truck.images and truck.images|length > 0 %}
-                                <img src="{{ truck.images[0] }}" alt="{{ truck.title }}" loading="lazy">
+                                {% set c_img = truck.images[0] %}
+                                {% if 'res.cloudinary.com' in c_img and '/image/upload/' in c_img and '/upload/f_' not in c_img %}
+                                    {% set c_webp = c_img | replace('/image/upload/', '/image/upload/f_webp,q_auto,w_600,c_limit/') %}
                                 {% else %}
-                                <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=500&q=75"
-                                    alt="{{ truck.title }}" loading="lazy">
+                                    {% set c_webp = c_img %}
+                                {% endif %}
+                                <picture>
+                                    <source type="image/webp" srcset="{{ c_webp }}">
+                                    <img src="{{ c_img }}" alt="{{ truck.title }} — food truck" width="500" height="375" loading="lazy" decoding="async">
+                                </picture>
+                                {% else %}
+                                <picture>
+                                    <source type="image/webp" srcset="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=500&q=70&fm=webp">
+                                    <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=500&q=70"
+                                        alt="{{ truck.title }}" width="500" height="375" loading="lazy" decoding="async">
+                                </picture>
                                 {% endif %}
                                 <div class="truck-card-badges">
                                     {% if truck.condition == 'new' %}
@@ -122,12 +134,12 @@
                                     {% elif truck.condition == 'used' %}
                                     <span class="badge bg-warning text-dark">Used</span>
                                     {% else %}
-                                    <span class="badge" style="background:#ff6b00;">Custom</span>
+                                    <span class="badge" style="background:#ff6b00;color:#fff;">Custom</span>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="truck-card-body">
-                                <h5><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h5>
+                                <h3><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h3>
                                 <p class="truck-card-desc">{{ truck.description[:80] }}...</p>
                                 <div class="truck-card-specs">
                                     <span><i class="bi bi-rulers"></i> {{ truck.specs.length | default('—') }}</span>

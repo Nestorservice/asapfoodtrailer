@@ -767,7 +767,7 @@ h6 {
         font-size: 1.1rem;
     }
 }
-/* ─── PERF/PSEUDO (10/10/2026) : styles des titres re-hiérarchisés h4 -> h3 ─── */
+/* ─── PERF/PSEUDO (10/10/2026) : Styles des titres re-hiérarchisés (h1 -> h2 -> h3 -> h4) ─── */
 .delivery1-item-box .box h3 a {
     font-size: 1.5rem;
     font-weight: 700;
@@ -777,9 +777,68 @@ h6 {
 }
 .delivery1-item-box .box h3 a:hover { color: #ff6b00; }
 
-/* Boutons héro : contraste AA renforcé sur fond sombre */
-.hero2-area .theme-btn1 span.text { background-color: #ff6b00 !important; color: #fff !important; }
-.hero2-area .theme-btn1.btn-outline span.text { background-color: rgba(255,255,255,.12) !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.truck-card-body h3 {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+.truck-card-body h3 a {
+    color: var(--asap-dark);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+.truck-card-body h3 a:hover {
+    color: var(--asap-orange);
+}
 
-/* Images : bonne hauteur intrinsèque dans les cartes inventaire (CLS = 0) */
-.truck-card-image img { width: 100%; height: 220px; object-fit: cover; display: block; }
+.author-area .author-info h4 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 2px;
+    color: #ffffff;
+}
+
+/* ─── Boutons héro : contraste AA renforcé (WCAG AA >= 4.5:1) ─── */
+.hero2-area .theme-btn1 span.text {
+    background-color: #e65100 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.hero2-area .theme-btn1 span.arrow-all {
+    background-color: #bf360c !important;
+    color: #ffffff !important;
+}
+
+.hero2-area .theme-btn1.btn-outline span.text {
+    background-color: rgba(12, 12, 18, 0.85) !important;
+    color: #ffffff !important;
+    border: 2px solid #ffffff !important;
+    font-weight: 700 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.hero2-area .theme-btn1.btn-outline span.arrow-all {
+    background-color: #e65100 !important;
+    color: #ffffff !important;
+}
+
+/* Images : hauteur intrinsèque fixe dans les cartes inventaire (CLS = 0) */
+.truck-card-image img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+
+/* Valeurs numériques des compteurs (non-titres pour l'accessibilité) */
+.counters2-box .text .counter-val {
+    color: var(--vtc-text-title1, #1a1a2e);
+    font-size: var(--f-fs-font-38, 2.375rem);
+    font-style: normal;
+    font-weight: var(--f-fw-semibold, 600);
+    line-height: var(--f-fs-font-38, 2.375rem);
+}
+
+

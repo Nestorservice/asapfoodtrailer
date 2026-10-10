@@ -46,12 +46,13 @@
     <!-- CSS critiques (render-blocking réduit : only what the fold needs) -->
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/css/swiper-bundle.css">
-    <link rel="stylesheet" href="/assets/css/aos.css">
+    <link rel="stylesheet" href="/assets/css/aos.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="/assets/css/aos.css"></noscript>
     <link rel="stylesheet" href="/assets/css/magnific-popup.css" media="print" onload="this.media='all'">
     <link rel="stylesheet" href="/assets/css/nice-select.css" media="print" onload="this.media='all'">
-    <link rel="stylesheet" href="/assets/css/utility.css">
-    <link rel="stylesheet" href="/assets/css/main.css">
-    <link rel="stylesheet" href="/assets/css/asap-custom.css">
+    <link rel="stylesheet" href="/assets/css/utility.min.css">
+    <link rel="stylesheet" href="/assets/css/main.min.css">
+    <link rel="stylesheet" href="/assets/css/asap-custom.min.css">
 
     <!-- Bootstrap Icons (professional icon set) — chargé sans bloquer le rendu -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" media="print" onload="this.media='all'">
@@ -119,16 +120,16 @@
                         <div class="vl-logo">
                             <a href="/" class="header1-logo d-none d-lg-block">
                                 <picture>
-                                    <source type="image/webp" srcset="/assets/img/logo/logo-100.webp">
-                                    <img src="/assets/img/logo/logo-100.png" alt="{{ business.name }} — accueil" width="100" height="100"
+                                    <source type="image/webp" srcset="/assets/img/logo/logo-50.webp 1x, /assets/img/logo/logo-100.webp 2x">
+                                    <img src="/assets/img/logo/logo-50.png" alt="{{ business.name }} — accueil" width="50" height="50"
                                         loading="eager" fetchpriority="high" decoding="async"
                                         style="height:50px;width:auto;border-radius:8px;">
                                 </picture>
                             </a>
                             <a href="/" class="header1-logo d-block d-lg-none">
                                 <picture>
-                                    <source type="image/webp" srcset="/assets/img/logo/logo-100.webp">
-                                    <img src="/assets/img/logo/logo-100.png" alt="{{ business.name }} — accueil" width="100" height="100"
+                                    <source type="image/webp" srcset="/assets/img/logo/logo-50.webp 1x, /assets/img/logo/logo-100.webp 2x">
+                                    <img src="/assets/img/logo/logo-50.png" alt="{{ business.name }} — accueil" width="50" height="50"
                                         loading="eager" fetchpriority="high" decoding="async"
                                         style="height:42px;width:auto;border-radius:8px;">
                                 </picture>
@@ -187,14 +188,14 @@
                 <div class="vl-offcanvas-logo">
                     <a href="/" class="header1-logo-block">
                         <picture>
-                            <source type="image/webp" srcset="/assets/img/logo/logo-100.webp">
-                            <img src="/assets/img/logo/logo-100.png" alt="{{ business.name }} — accueil" width="100" height="100"
+                            <source type="image/webp" srcset="/assets/img/logo/logo-50.webp 1x, /assets/img/logo/logo-100.webp 2x">
+                            <img src="/assets/img/logo/logo-50.png" alt="{{ business.name }} — accueil" width="50" height="50"
                                 loading="lazy" decoding="async" style="height:40px;width:auto;border-radius:8px;">
                         </picture>
                     </a>
                 </div>
                 <div class="vl-offcanvas-close">
-                    <button class="vl-offcanvas-close-toggle"><i class="bi bi-x-lg"></i></button>
+                    <button class="vl-offcanvas-close-toggle" type="button" aria-label="Fermer le menu"><i class="bi bi-x-lg"></i></button>
                 </div>
             </div>
             <div class="vl-offcanvas-menu d-lg-none mb-40">
@@ -209,7 +210,7 @@
             </div>
             <div class="space20"></div>
             <div class="vl-offcanvas-contact vl-footer-widget-black1 mb-20">
-                <h4>Contact Us</h4>
+                <p class="offcanvas-heading" style="color:#fff;font-weight:700;font-size:1.15rem;margin-bottom:12px;">Contact Us</p>
                 <div class="single-contact-item">
                     <div class="text">
                         <a href="mailto:{{ business.email }}"><span><i class="bi bi-envelope"></i></span> {{
@@ -229,7 +230,7 @@
                 </div>
             </div>
             <div class="vl-offcanvas-social mt-24">
-                <h4>Follow Us</h4>
+                <p class="offcanvas-heading" style="color:#fff;font-weight:700;font-size:1.15rem;margin-bottom:12px;">Follow Us</p>
                 <div class="vl-copyright-social2 text-start">
                     <a href="{{ social.tiktok }}" target="_blank" title="TikTok" class="social-btn-tiktok"><i class="bi bi-tiktok"></i></a>
                     <a href="{{ social.facebook }}" target="_blank" title="Facebook" class="social-btn-fb"><i class="bi bi-facebook"></i></a>
@@ -256,8 +257,8 @@
                             <div class="footer1-logo">
                                 <a href="/">
                                     <picture>
-                                        <source type="image/webp" srcset="/assets/img/logo/logo-100.webp">
-                                        <img src="/assets/img/logo/logo-100.png" alt="{{ business.name }} — retour à l'accueil" width="100" height="100"
+                                        <source type="image/webp" srcset="/assets/img/logo/logo-50.webp 1x, /assets/img/logo/logo-100.webp 2x">
+                                        <img src="/assets/img/logo/logo-50.png" alt="{{ business.name }} — retour à l'accueil" width="50" height="50"
                                             loading="lazy" decoding="async" style="height:50px;width:auto;border-radius:8px;">
                                     </picture>
                                 </a>
@@ -325,12 +326,12 @@
         </div>
     </footer>
 
-    <!-- Scripts (CDN) â€” defer : ne bloquent plus le rendu, ordre d'exÃ©cution conservÃ© -->
+    <!-- Scripts (CDN) — defer : ne bloquent plus le rendu critique HTML -->
     <script defer src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
-    <script defer src="/assets/js/app.js"></script>
+    <script defer src="/assets/js/app.min.js"></script>
 
     <!-- Analytics tracking -->
     <script>
@@ -581,7 +582,7 @@
                 <div class="chat-header-info">
                     <div class="chat-header-avatar"><i class="bi bi-headset"></i></div>
                     <div class="chat-header-text">
-                        <h6>ASAP Support</h6>
+                        <div class="chat-header-title" style="font-weight:700;color:#fff;font-size:0.95rem;">ASAP Support</div>
                         <span><span class="status-dot"></span> We typically reply instantly</span>
                     </div>
                 </div>
@@ -595,7 +596,7 @@
 
             <!-- Welcome Form -->
             <div class="chat-welcome" id="chatWelcome">
-                <h5>👋 Hey there!</h5>
+                <p class="chat-welcome-title" style="font-weight:700;font-size:1.1rem;margin-bottom:6px;">👋 Hey there!</p>
                 <p>We're here to help. Enter your info to start chatting.</p>
                 <input type="text" id="chatName" placeholder="Your name" autocomplete="name">
                 <input type="email" id="chatEmail" placeholder="Your email" autocomplete="email">

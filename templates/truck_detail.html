@@ -43,15 +43,24 @@
                     <div class="swiper gallery-main" style="border-radius:16px;overflow:hidden;">
                         <div class="swiper-wrapper">
                             {% for img in truck.images %}
+                            {% set main_webp = img | replace('/image/upload/', '/image/upload/f_webp,q_auto,w_900,c_limit/') if 'res.cloudinary.com' in img and '/image/upload/' in img and '/upload/f_' not in img else img %}
                             <div class="swiper-slide">
-                                <img src="{{ img }}" alt="{{ truck.title }}"
-                                    style="width:100%;height:450px;object-fit:cover;">
+                                <picture>
+                                    <source type="image/webp" srcset="{{ main_webp }}">
+                                    <img src="{{ img }}" alt="{{ truck.title }}"
+                                        width="800" height="450"
+                                        {% if loop.first %}loading="eager" fetchpriority="high"{% else %}loading="lazy" decoding="async"{% endif %}
+                                        style="width:100%;height:450px;object-fit:cover;">
+                                </picture>
                             </div>
                             {% endfor %}
                             {% if not truck.images %}
                             <div class="swiper-slide">
-                                <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=800&q=80"
-                                    alt="{{ truck.title }}" style="width:100%;height:450px;object-fit:cover;">
+                                <picture>
+                                    <source type="image/webp" srcset="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=800&q=75&fm=webp">
+                                    <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=800&q=75"
+                                        alt="{{ truck.title }}" width="800" height="450" loading="eager" style="width:100%;height:450px;object-fit:cover;">
+                                </picture>
                             </div>
                             {% endif %}
                         </div>
@@ -62,9 +71,14 @@
                     <div class="swiper gallery-thumbs mt-3">
                         <div class="swiper-wrapper">
                             {% for img in truck.images %}
+                            {% set thumb_webp = img | replace('/image/upload/', '/image/upload/f_webp,q_auto,w_160,c_limit/') if 'res.cloudinary.com' in img and '/image/upload/' in img and '/upload/f_' not in img else img %}
                             <div class="swiper-slide" style="cursor:pointer;">
-                                <img src="{{ img }}" alt=""
-                                    style="width:100%;height:80px;object-fit:cover;border-radius:8px;">
+                                <picture>
+                                    <source type="image/webp" srcset="{{ thumb_webp }}">
+                                    <img src="{{ img }}" alt="{{ truck.title }} miniature"
+                                        width="140" height="80" loading="lazy" decoding="async"
+                                        style="width:100%;height:80px;object-fit:cover;border-radius:8px;">
+                                </picture>
                             </div>
                             {% endfor %}
                         </div>

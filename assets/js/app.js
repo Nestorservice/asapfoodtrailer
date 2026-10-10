@@ -160,6 +160,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ─── BACK TO TOP ───
     var backToTop = document.createElement('button');
+    backToTop.setAttribute('type', 'button');
+    backToTop.setAttribute('aria-label', 'Retour en haut de la page');
     backToTop.innerHTML = '<i class="bi bi-chevron-up"></i>';
     backToTop.className = 'asap-back-to-top';
     backToTop.style.cssText = 'position:fixed;bottom:30px;right:30px;width:46px;height:46px;border-radius:12px;background:#ff6b00;color:#fff;border:none;font-size:1.2rem;cursor:pointer;z-index:999;opacity:0;visibility:hidden;transition:all 0.3s;box-shadow:0 4px 16px rgba(255,107,0,0.3);';

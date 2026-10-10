@@ -115,6 +115,25 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads"
 templates = Jinja2Templates(directory=settings.TEMPLATES_DIR)
 
 
+def optimize_cloudinary_url(url: str, width: int = 600, fmt: str = "webp", quality: str = "auto") -> str:
+    """Transform Cloudinary or Unsplash URLs to optimized WebP format with width limit."""
+    if not url:
+        return ""
+    if "res.cloudinary.com" in url and "/image/upload/" in url:
+        if "/image/upload/f_" in url or "/image/upload/w_" in url:
+            return url
+        parts = url.split("/image/upload/", 1)
+        transform = f"f_{fmt},q_{quality},w_{width},c_limit"
+        return f"{parts[0]}/image/upload/{transform}/{parts[1]}"
+    if "images.unsplash.com" in url:
+        sep = "&" if "?" in url else "?"
+        return f"{url}{sep}w={width}&q=75&fm=webp"
+    return url
+
+
+templates.env.filters["optimize_cloudinary"] = optimize_cloudinary_url
+
+
 # ─── Health check + diagnostics ───────────────────────────────
 @app.get("/health")
 async def health_check():

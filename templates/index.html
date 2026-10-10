@@ -1,9 +1,8 @@
 {% extends "base.html" %}
 
 {% block head_preload %}
-<!-- LCP : préchargement de l'image héro (WebP en priorité, fallback JPEG) -->
-<link rel="preload" as="image" href="/assets/img/hero/truck1.webp" type="image/webp">
-<link rel="preload" as="image" href="/assets/img/hero/truck1.jpeg" fetchpriority="high">
+<!-- LCP : préchargement prioritaire WebP de l'image héro (optimisation LCP < 2,5s) -->
+<link rel="preload" as="image" href="/assets/img/hero/truck1.webp" type="image/webp" fetchpriority="high">
 {% endblock %}
 
 {% block head_extra %}
@@ -57,7 +56,8 @@
 
     .hero2-heading h1,
     .hero2-heading h2,
-    .hero2-heading h3 {
+    .hero2-heading h3,
+    .hero2-heading .hero-slide-heading {
         color: #fff;
         font-family: 'Outfit', sans-serif;
         font-weight: 900;
@@ -168,7 +168,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Custom Built to Your Vision</span>
-                                    <h3 class="hero-slide-heading">Your Dream Kitchen On Wheels</h3>
+                                    <p class="hero-slide-heading">Your Dream Kitchen On Wheels</p>
                                     <p class="mt-16">From concept to delivery, we build custom food trucks tailored
                                         exactly to your menu, workflow, and brand identity.</p>
                                     <div class="button mt-30">
@@ -198,7 +198,7 @@
                             <div class="col-lg-7">
                                 <div class="hero2-heading" data-aos="fade-up" data-aos-duration="800">
                                     <span class="sub-title">Flexible Leasing Available</span>
-                                    <h3 class="hero-slide-heading">Start Serving Without the Big Investment</h3>
+                                    <p class="hero-slide-heading">Start Serving Without the Big Investment</p>
                                     <p class="mt-16">Affordable rental and lease-to-own options so you can start your
                                         food business with minimal upfront cost.</p>
                                     <div class="button mt-30">
@@ -230,7 +230,7 @@
                     <div class="counters2-box">
                         <div class="icon"><i class="bi bi-truck" style="font-size:2.4rem;color:#ff6b00;"></i></div>
                         <div class="text">
-                            <h3><span class="counter" data-count="{{ fleet_stats.total | default(50) }}">0</span>+</h3>
+                            <div class="counter-val"><span class="counter" data-count="{{ fleet_stats.total | default(50) }}">0</span>+</div>
                             <p>Vehicles in Fleet</p>
                         </div>
                     </div>
@@ -242,8 +242,7 @@
                         <div class="icon"><i class="bi bi-check-circle" style="font-size:2.4rem;color:#ff6b00;"></i>
                         </div>
                         <div class="text">
-                            <h3><span class="counter" data-count="{{ fleet_stats.available | default(30) }}">0</span>
-                            </h3>
+                            <div class="counter-val"><span class="counter" data-count="{{ fleet_stats.available | default(30) }}">0</span></div>
                             <p>Ready to Ship</p>
                         </div>
                     </div>
@@ -254,7 +253,7 @@
                     <div class="counters2-box">
                         <div class="icon"><i class="bi bi-people" style="font-size:2.4rem;color:#ff6b00;"></i></div>
                         <div class="text">
-                            <h3><span class="counter" data-count="500">0</span>+</h3>
+                            <div class="counter-val"><span class="counter" data-count="500">0</span>+</div>
                             <p>Happy Clients</p>
                         </div>
                     </div>
@@ -265,7 +264,7 @@
                     <div class="counters2-box">
                         <div class="icon"><i class="bi bi-headset" style="font-size:2.4rem;color:#ff6b00;"></i></div>
                         <div class="text">
-                            <h3>24/7</h3>
+                            <div class="counter-val">24/7</div>
                             <p>Customer Support</p>
                         </div>
                     </div>
@@ -292,13 +291,25 @@
                 <div class="asap-truck-card mt-30" data-aos="fade-up" data-aos-duration="{{ 800 + loop.index0 * 200 }}">
                     <div class="truck-card-image">
                         {% if truck.images and truck.images|length > 0 %}
-                        <img src="{{ truck.images[0] }}{% if 'res.cloudinary.com' in truck.images[0] %}{% if '?' in truck.images[0] %}&{% else %}?{% endif %}f_webp,q_auto,w_600{% endif %}"
-                            alt="{{ truck.title }} — {{ truck.category | replace('-',' ') }} {% if truck.condition == 'new' %}neuf{% elif truck.condition == 'used' %}occasion{% else %}sur mesure{% endif %} ASAP Food Trucks"
-                            width="600" height="450" loading="lazy" decoding="async">
+                        {% set img_src = truck.images[0] %}
+                        {% if 'res.cloudinary.com' in img_src and '/image/upload/' in img_src and '/upload/f_' not in img_src %}
+                            {% set img_webp = img_src | replace('/image/upload/', '/image/upload/f_webp,q_auto,w_600,c_limit/') %}
                         {% else %}
-                        <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=60&fm=webp"
-                            alt="{{ truck.title }} — photo d'illustration food truck"
-                            width="600" height="450" loading="lazy" decoding="async">
+                            {% set img_webp = img_src %}
+                        {% endif %}
+                        <picture>
+                            <source type="image/webp" srcset="{{ img_webp }}">
+                            <img src="{{ img_src }}"
+                                alt="{{ truck.title }} — {{ truck.category | replace('-',' ') }} {% if truck.condition == 'new' %}neuf{% elif truck.condition == 'used' %}occasion{% else %}sur mesure{% endif %} ASAP Food Trucks"
+                                width="600" height="450" loading="lazy" decoding="async">
+                        </picture>
+                        {% else %}
+                        <picture>
+                            <source type="image/webp" srcset="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=70&fm=webp">
+                            <img src="https://images.unsplash.com/photo-1565123409695-7b5ef63a2efb?w=600&q=70"
+                                alt="{{ truck.title }} — photo d'illustration food truck"
+                                width="600" height="450" loading="lazy" decoding="async">
+                        </picture>
                         {% endif %}
                         <div class="truck-card-badges">
                             {% if truck.condition == 'new' %}
@@ -314,7 +325,7 @@
                         </div>
                     </div>
                     <div class="truck-card-body">
-                        <h5><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h5>
+                        <h3><a href="/{{ truck.category }}/{{ truck.slug }}">{{ truck.title }}</a></h3>
                         <p class="truck-card-desc">{{ truck.description[:100] }}...</p>
                         <div class="truck-card-specs">
                             <span><i class="bi bi-rulers"></i> {{ truck.specs.length | default('N/A') }}</span>
@@ -482,7 +493,11 @@
             {% for t in image_testimonials %}
             <div class="col-lg-3 col-md-4 col-6" data-aos="fade-up" data-aos-duration="{{ 600 + loop.index0 * 150 }}">
                 <div class="testimonial-img-card" onclick="openTestimonialLightbox('{{ t.image_url }}')">
-                    <img src="{{ t.image_url }}" alt="Témoignage client ASAP Food Trucks" loading="lazy" decoding="async"
+                    {% set t_img = t.image_url %}
+                    {% if 'res.cloudinary.com' in t_img and '/image/upload/' in t_img and '/upload/f_' not in t_img %}
+                        {% set t_img = t_img | replace('/image/upload/', '/image/upload/f_webp,q_auto,w_400,c_limit/') %}
+                    {% endif %}
+                    <img src="{{ t_img }}" alt="Témoignage client ASAP Food Trucks" loading="lazy" decoding="async"
                         width="300" height="200" style="width:100%;height:200px;object-fit:cover;"
                         onerror="this.parentElement.style.display='none'">
                     <div class="testimonial-img-overlay">
@@ -512,7 +527,7 @@
                             style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ff6b00,#ff8c33);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem;">
                             {{ t.name[0] }}</div>
                         <div class="author-info">
-                            <h6>{{ t.name }}</h6>
+                            <h4>{{ t.name }}</h4>
                             <span>{{ t.role | default('Business Owner') }}</span>
                         </div>
                     </div>
