@@ -76,6 +76,34 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(HeadRequestMiddleware)
 
+
+# ─── Cache-Control sur les fichiers statiques (PageSpeed 10/10/2026) ───
+# Équivalent des règles .htaccess pour Railway/Render (pas d'Apache).
+@app.middleware("http")
+async def cache_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path
+    if path.startswith("/assets/") or path.startswith("/uploads/"):
+        if path.endswith((".webp", ".avif", ".jpg", ".jpeg", ".png", ".gif", ".svg", ".ico",
+                          ".woff", ".woff2", ".ttf", ".otf")):
+            # Images & polices : 1 an, immutable
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        elif path.endswith((".css", ".js")):
+            # CSS / JS : 1 mois
+            response.headers["Cache-Control"] = "public, max-age=2592000"
+        # En-têtes de sécurité également servis par le middleware applicatif
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    elif not path.startswith(("/api/", "/admin")):
+        # Pages HTML : revalidation courte, pas de cache agressif
+        response.headers.setdefault("Cache-Control", "public, max-age=0, must-revalidate")
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        response.headers.setdefault("Permissions-Policy",
+                                    "camera=(), microphone=(self), geolocation=(), payment=()")
+    return response
+
 # Static files
 app.mount("/assets", StaticFiles(directory=settings.STATIC_DIR), name="assets")
 
